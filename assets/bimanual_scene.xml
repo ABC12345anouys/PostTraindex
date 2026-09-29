@@ -1,0 +1,972 @@
+<mujoco model="bimanual_dex">
+  <compiler angle="radian" autolimits="true"/>
+
+  <visual>
+    <headlight ambient="0.45 0.45 0.45" diffuse="0.5 0.5 0.5" specular="0.15 0.15 0.15"/>
+    <quality shadowsize="1024"/>
+    <rgba haze="0.35 0.35 0.35 1"/>
+  </visual>
+
+  <option integrator="implicitfast" solver="Newton" iterations="200" ls_iterations="50"
+    ls_tolerance="1e-4" cone="elliptic" impratio="10" timestep="0.002"/>
+
+  <size memory="100M"/>
+
+  <default>
+    <geom solimp="0.9 0.95 0.001 0.5 2" solref="0.01 1"/>
+    <default class="table">
+      <geom type="box" material="table_wood" friction="1.0 0.3 0.05"/>
+    </default>
+<default class="l_panda">
+  <material specular="0.5" shininess="0.25"/>
+  <joint armature="0.1" damping="1" axis="0 0 1" range="-2.8973 2.8973"/>
+  <general dyntype="none" biastype="affine" ctrlrange="-2.8973 2.8973" forcerange="-87 87"/>
+  <default class="l_panda/visual">
+    <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+  </default>
+  <default class="l_panda/collision">
+    <geom type="mesh" group="3"/>
+  </default>
+  <site size="0.001" rgba="0.5 0.5 0.5 0.3" group="4"/>
+</default>
+<default class="r_panda">
+  <material specular="0.5" shininess="0.25"/>
+  <joint armature="0.1" damping="1" axis="0 0 1" range="-2.8973 2.8973"/>
+  <general dyntype="none" biastype="affine" ctrlrange="-2.8973 2.8973" forcerange="-87 87"/>
+  <default class="r_panda/visual">
+    <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+  </default>
+  <default class="r_panda/collision">
+    <geom type="mesh" group="3"/>
+  </default>
+  <site size="0.001" rgba="0.5 0.5 0.5 0.3" group="4"/>
+</default>
+<default class="lh_hand">
+  <mesh scale="0.001 0.001 0.001"/>
+  <joint axis="1 0 0" damping="0.05" armature="0.0002" frictionloss="0.01"/>
+  <position forcerange="-1 1"/>
+  <default class="lh_wrist">
+    <joint damping="0.5"/>
+    <default class="lh_wrist_y">
+      <joint axis="0 -1 0" range="-0.523599 0.174533"/>
+      <position kp="10" ctrlrange="-0.523599 0.174533" forcerange="-10 10"/>
+    </default>
+    <default class="lh_wrist_x">
+      <joint range="-0.698132 0.488692"/>
+      <position kp="8" ctrlrange="-0.698132 0.488692" forcerange="-5 5"/>
+    </default>
+  </default>
+  <default class="lh_thumb">
+    <default class="lh_thbase">
+      <joint axis="0 0 1" range="-1.0472 1.0472"/>
+      <position kp="0.4" ctrlrange="-1.0472 1.0472" forcerange="-3 3"/>
+    </default>
+    <default class="lh_thproximal">
+      <joint axis="-1 0 0" range="0 1.22173"/>
+      <position ctrlrange="0 1.22173" forcerange="-2 2"/>
+    </default>
+    <default class="lh_thhub">
+      <joint axis="-1 0 0" range="-0.20944 0.20944"/>
+      <position kp="0.5" ctrlrange="-0.20944 0.20944"/>
+    </default>
+    <default class="lh_thmiddle">
+      <joint axis="0 -1 0" range="-0.698132 0.698132"/>
+      <position kp="1.5" ctrlrange="-0.698132 0.698132"/>
+    </default>
+    <default class="lh_thdistal">
+      <joint range="-0.261799 1.5708"/>
+      <position ctrlrange="-0.261799 1.5708"/>
+    </default>
+  </default>
+  <default class="lh_metacarpal">
+    <joint axis="0.573576 0 0.819152" range="0 0.785398"/>
+    <position ctrlrange="0 0.785398"/>
+  </default>
+  <default class="lh_knuckle">
+    <joint axis="0 -1 0" range="-0.349066 0.349066"/>
+    <position ctrlrange="-0.349066 0.349066"/>
+  </default>
+  <default class="lh_proximal">
+    <joint range="-0.261799 1.5708"/>
+    <position ctrlrange="-0.261799 1.5708"/>
+  </default>
+  <default class="lh_middle_distal">
+    <joint range="0 1.5708"/>
+    <position kp="0.5" ctrlrange="0 3.1415"/>
+  </default>
+  <default class="lh_plastic">
+    <geom solimp="0.5 0.99 0.0001" solref="0.005 1"/>
+    <default class="lh_plastic_visual">
+      <geom type="mesh" material="lh_black" contype="0" conaffinity="0" group="2"/>
+    </default>
+    <default class="lh_plastic_collision">
+      <geom group="3"/>
+    </default>
+  </default>
+</default>
+<default class="rh_hand">
+  <mesh scale="0.001 0.001 0.001"/>
+  <joint axis="1 0 0" damping="0.05" armature="0.0002" frictionloss="0.01"/>
+  <position forcerange="-1 1"/>
+  <default class="rh_wrist">
+    <joint damping="0.5"/>
+    <default class="rh_wrist_y">
+      <joint axis="0 1 0" range="-0.523599 0.174533"/>
+      <position kp="10" ctrlrange="-0.523599 0.174533" forcerange="-10 10"/>
+    </default>
+    <default class="rh_wrist_x">
+      <joint range="-0.698132 0.488692"/>
+      <position kp="8" ctrlrange="-0.698132 0.488692" forcerange="-5 5"/>
+    </default>
+  </default>
+  <default class="rh_thumb">
+    <default class="rh_thbase">
+      <joint axis="0 0 -1" range="-1.0472 1.0472"/>
+      <position kp="0.4" ctrlrange="-1.0472 1.0472" forcerange="-3 3"/>
+    </default>
+    <default class="rh_thproximal">
+      <joint range="0 1.22173"/>
+      <position ctrlrange="0 1.22173" forcerange="-2 2"/>
+    </default>
+    <default class="rh_thhub">
+      <joint range="-0.20944 0.20944"/>
+      <position kp="0.5" ctrlrange="-0.20944 0.20944"/>
+    </default>
+    <default class="rh_thmiddle">
+      <joint axis="0 -1 0" range="-0.698132 0.698132"/>
+      <position kp="1.5" ctrlrange="-0.698132 0.698132"/>
+    </default>
+    <default class="rh_thdistal">
+      <joint range="-0.261799 1.5708"/>
+      <position ctrlrange="-0.261799 1.5708"/>
+    </default>
+  </default>
+  <default class="rh_metacarpal">
+    <joint axis="0.573576 0 0.819152" range="0 0.785398"/>
+    <position ctrlrange="0 0.785398"/>
+  </default>
+  <default class="rh_knuckle">
+    <joint axis="0 -1 0" range="-0.349066 0.349066"/>
+    <position ctrlrange="-0.349066 0.349066"/>
+  </default>
+  <default class="rh_proximal">
+    <joint range="-0.261799 1.5708"/>
+    <position ctrlrange="-0.261799 1.5708"/>
+  </default>
+  <default class="rh_middle_distal">
+    <joint range="0 1.5708"/>
+    <position kp="0.5" ctrlrange="0 3.1415"/>
+  </default>
+  <default class="rh_plastic">
+    <geom solimp="0.5 0.99 0.0001" solref="0.005 1"/>
+    <default class="rh_plastic_visual">
+      <geom type="mesh" material="rh_black" contype="0" conaffinity="0" group="2"/>
+    </default>
+    <default class="rh_plastic_collision">
+      <geom group="3"/>
+    </default>
+  </default>
+</default>
+  </default>
+
+  <asset>
+    <material name="table_wood" rgba="0.6 0.45 0.3 1" specular="0.2" shininess="0.1"/>
+<material class="l_panda" name="l_white" rgba="1 1 1 1"/>
+<material class="l_panda" name="l_off_white" rgba="0.901961 0.921569 0.929412 1"/>
+<material class="l_panda" name="l_dark_grey" rgba="0.25 0.25 0.25 1"/>
+<material class="l_panda" name="l_green" rgba="0 1 0 1"/>
+<material class="l_panda" name="l_light_blue" rgba="0.039216 0.541176 0.780392 1"/>
+<mesh name="l_link0_c" file="../third_party/panda/meshes/link0.stl"/>
+<mesh name="l_link1_c" file="../third_party/panda/meshes/link1.stl"/>
+<mesh name="l_link2_c" file="../third_party/panda/meshes/link2.stl"/>
+<mesh name="l_link3_c" file="../third_party/panda/meshes/link3.stl"/>
+<mesh name="l_link4_c" file="../third_party/panda/meshes/link4.stl"/>
+<mesh name="l_link5_c0" file="../third_party/panda/meshes/link5_collision_0.obj"/>
+<mesh name="l_link5_c1" file="../third_party/panda/meshes/link5_collision_1.obj"/>
+<mesh name="l_link5_c2" file="../third_party/panda/meshes/link5_collision_2.obj"/>
+<mesh name="l_link6_c" file="../third_party/panda/meshes/link6.stl"/>
+<mesh name="l_link7_c" file="../third_party/panda/meshes/link7.stl"/>
+<mesh file="../third_party/panda/meshes/link0_0.obj" name="l_link0_0"/>
+<mesh file="../third_party/panda/meshes/link0_1.obj" name="l_link0_1"/>
+<mesh file="../third_party/panda/meshes/link0_2.obj" name="l_link0_2"/>
+<mesh file="../third_party/panda/meshes/link0_3.obj" name="l_link0_3"/>
+<mesh file="../third_party/panda/meshes/link0_4.obj" name="l_link0_4"/>
+<mesh file="../third_party/panda/meshes/link0_5.obj" name="l_link0_5"/>
+<mesh file="../third_party/panda/meshes/link0_7.obj" name="l_link0_7"/>
+<mesh file="../third_party/panda/meshes/link0_8.obj" name="l_link0_8"/>
+<mesh file="../third_party/panda/meshes/link0_9.obj" name="l_link0_9"/>
+<mesh file="../third_party/panda/meshes/link0_10.obj" name="l_link0_10"/>
+<mesh file="../third_party/panda/meshes/link0_11.obj" name="l_link0_11"/>
+<mesh file="../third_party/panda/meshes/link1.obj" name="l_link1"/>
+<mesh file="../third_party/panda/meshes/link2.obj" name="l_link2"/>
+<mesh file="../third_party/panda/meshes/link3_0.obj" name="l_link3_0"/>
+<mesh file="../third_party/panda/meshes/link3_1.obj" name="l_link3_1"/>
+<mesh file="../third_party/panda/meshes/link3_2.obj" name="l_link3_2"/>
+<mesh file="../third_party/panda/meshes/link3_3.obj" name="l_link3_3"/>
+<mesh file="../third_party/panda/meshes/link4_0.obj" name="l_link4_0"/>
+<mesh file="../third_party/panda/meshes/link4_1.obj" name="l_link4_1"/>
+<mesh file="../third_party/panda/meshes/link4_2.obj" name="l_link4_2"/>
+<mesh file="../third_party/panda/meshes/link4_3.obj" name="l_link4_3"/>
+<mesh file="../third_party/panda/meshes/link5_0.obj" name="l_link5_0"/>
+<mesh file="../third_party/panda/meshes/link5_1.obj" name="l_link5_1"/>
+<mesh file="../third_party/panda/meshes/link5_2.obj" name="l_link5_2"/>
+<mesh file="../third_party/panda/meshes/link6_0.obj" name="l_link6_0"/>
+<mesh file="../third_party/panda/meshes/link6_1.obj" name="l_link6_1"/>
+<mesh file="../third_party/panda/meshes/link6_2.obj" name="l_link6_2"/>
+<mesh file="../third_party/panda/meshes/link6_3.obj" name="l_link6_3"/>
+<mesh file="../third_party/panda/meshes/link6_4.obj" name="l_link6_4"/>
+<mesh file="../third_party/panda/meshes/link6_5.obj" name="l_link6_5"/>
+<mesh file="../third_party/panda/meshes/link6_6.obj" name="l_link6_6"/>
+<mesh file="../third_party/panda/meshes/link6_7.obj" name="l_link6_7"/>
+<mesh file="../third_party/panda/meshes/link6_8.obj" name="l_link6_8"/>
+<mesh file="../third_party/panda/meshes/link6_9.obj" name="l_link6_9"/>
+<mesh file="../third_party/panda/meshes/link6_10.obj" name="l_link6_10"/>
+<mesh file="../third_party/panda/meshes/link6_11.obj" name="l_link6_11"/>
+<mesh file="../third_party/panda/meshes/link6_12.obj" name="l_link6_12"/>
+<mesh file="../third_party/panda/meshes/link6_13.obj" name="l_link6_13"/>
+<mesh file="../third_party/panda/meshes/link6_14.obj" name="l_link6_14"/>
+<mesh file="../third_party/panda/meshes/link6_15.obj" name="l_link6_15"/>
+<mesh file="../third_party/panda/meshes/link6_16.obj" name="l_link6_16"/>
+<mesh file="../third_party/panda/meshes/link7_0.obj" name="l_link7_0"/>
+<mesh file="../third_party/panda/meshes/link7_1.obj" name="l_link7_1"/>
+<mesh file="../third_party/panda/meshes/link7_2.obj" name="l_link7_2"/>
+<mesh file="../third_party/panda/meshes/link7_3.obj" name="l_link7_3"/>
+<mesh file="../third_party/panda/meshes/link7_4.obj" name="l_link7_4"/>
+<mesh file="../third_party/panda/meshes/link7_5.obj" name="l_link7_5"/>
+<mesh file="../third_party/panda/meshes/link7_6.obj" name="l_link7_6"/>
+<mesh file="../third_party/panda/meshes/link7_7.obj" name="l_link7_7"/>
+<material class="r_panda" name="r_white" rgba="1 1 1 1"/>
+<material class="r_panda" name="r_off_white" rgba="0.901961 0.921569 0.929412 1"/>
+<material class="r_panda" name="r_dark_grey" rgba="0.25 0.25 0.25 1"/>
+<material class="r_panda" name="r_green" rgba="0 1 0 1"/>
+<material class="r_panda" name="r_light_blue" rgba="0.039216 0.541176 0.780392 1"/>
+<mesh name="r_link0_c" file="../third_party/panda/meshes/link0.stl"/>
+<mesh name="r_link1_c" file="../third_party/panda/meshes/link1.stl"/>
+<mesh name="r_link2_c" file="../third_party/panda/meshes/link2.stl"/>
+<mesh name="r_link3_c" file="../third_party/panda/meshes/link3.stl"/>
+<mesh name="r_link4_c" file="../third_party/panda/meshes/link4.stl"/>
+<mesh name="r_link5_c0" file="../third_party/panda/meshes/link5_collision_0.obj"/>
+<mesh name="r_link5_c1" file="../third_party/panda/meshes/link5_collision_1.obj"/>
+<mesh name="r_link5_c2" file="../third_party/panda/meshes/link5_collision_2.obj"/>
+<mesh name="r_link6_c" file="../third_party/panda/meshes/link6.stl"/>
+<mesh name="r_link7_c" file="../third_party/panda/meshes/link7.stl"/>
+<mesh file="../third_party/panda/meshes/link0_0.obj" name="r_link0_0"/>
+<mesh file="../third_party/panda/meshes/link0_1.obj" name="r_link0_1"/>
+<mesh file="../third_party/panda/meshes/link0_2.obj" name="r_link0_2"/>
+<mesh file="../third_party/panda/meshes/link0_3.obj" name="r_link0_3"/>
+<mesh file="../third_party/panda/meshes/link0_4.obj" name="r_link0_4"/>
+<mesh file="../third_party/panda/meshes/link0_5.obj" name="r_link0_5"/>
+<mesh file="../third_party/panda/meshes/link0_7.obj" name="r_link0_7"/>
+<mesh file="../third_party/panda/meshes/link0_8.obj" name="r_link0_8"/>
+<mesh file="../third_party/panda/meshes/link0_9.obj" name="r_link0_9"/>
+<mesh file="../third_party/panda/meshes/link0_10.obj" name="r_link0_10"/>
+<mesh file="../third_party/panda/meshes/link0_11.obj" name="r_link0_11"/>
+<mesh file="../third_party/panda/meshes/link1.obj" name="r_link1"/>
+<mesh file="../third_party/panda/meshes/link2.obj" name="r_link2"/>
+<mesh file="../third_party/panda/meshes/link3_0.obj" name="r_link3_0"/>
+<mesh file="../third_party/panda/meshes/link3_1.obj" name="r_link3_1"/>
+<mesh file="../third_party/panda/meshes/link3_2.obj" name="r_link3_2"/>
+<mesh file="../third_party/panda/meshes/link3_3.obj" name="r_link3_3"/>
+<mesh file="../third_party/panda/meshes/link4_0.obj" name="r_link4_0"/>
+<mesh file="../third_party/panda/meshes/link4_1.obj" name="r_link4_1"/>
+<mesh file="../third_party/panda/meshes/link4_2.obj" name="r_link4_2"/>
+<mesh file="../third_party/panda/meshes/link4_3.obj" name="r_link4_3"/>
+<mesh file="../third_party/panda/meshes/link5_0.obj" name="r_link5_0"/>
+<mesh file="../third_party/panda/meshes/link5_1.obj" name="r_link5_1"/>
+<mesh file="../third_party/panda/meshes/link5_2.obj" name="r_link5_2"/>
+<mesh file="../third_party/panda/meshes/link6_0.obj" name="r_link6_0"/>
+<mesh file="../third_party/panda/meshes/link6_1.obj" name="r_link6_1"/>
+<mesh file="../third_party/panda/meshes/link6_2.obj" name="r_link6_2"/>
+<mesh file="../third_party/panda/meshes/link6_3.obj" name="r_link6_3"/>
+<mesh file="../third_party/panda/meshes/link6_4.obj" name="r_link6_4"/>
+<mesh file="../third_party/panda/meshes/link6_5.obj" name="r_link6_5"/>
+<mesh file="../third_party/panda/meshes/link6_6.obj" name="r_link6_6"/>
+<mesh file="../third_party/panda/meshes/link6_7.obj" name="r_link6_7"/>
+<mesh file="../third_party/panda/meshes/link6_8.obj" name="r_link6_8"/>
+<mesh file="../third_party/panda/meshes/link6_9.obj" name="r_link6_9"/>
+<mesh file="../third_party/panda/meshes/link6_10.obj" name="r_link6_10"/>
+<mesh file="../third_party/panda/meshes/link6_11.obj" name="r_link6_11"/>
+<mesh file="../third_party/panda/meshes/link6_12.obj" name="r_link6_12"/>
+<mesh file="../third_party/panda/meshes/link6_13.obj" name="r_link6_13"/>
+<mesh file="../third_party/panda/meshes/link6_14.obj" name="r_link6_14"/>
+<mesh file="../third_party/panda/meshes/link6_15.obj" name="r_link6_15"/>
+<mesh file="../third_party/panda/meshes/link6_16.obj" name="r_link6_16"/>
+<mesh file="../third_party/panda/meshes/link7_0.obj" name="r_link7_0"/>
+<mesh file="../third_party/panda/meshes/link7_1.obj" name="r_link7_1"/>
+<mesh file="../third_party/panda/meshes/link7_2.obj" name="r_link7_2"/>
+<mesh file="../third_party/panda/meshes/link7_3.obj" name="r_link7_3"/>
+<mesh file="../third_party/panda/meshes/link7_4.obj" name="r_link7_4"/>
+<mesh file="../third_party/panda/meshes/link7_5.obj" name="r_link7_5"/>
+<mesh file="../third_party/panda/meshes/link7_6.obj" name="r_link7_6"/>
+<mesh file="../third_party/panda/meshes/link7_7.obj" name="r_link7_7"/>
+<material name="lh_black" specular="0.5" shininess="0.25" rgba="0.16355 0.16355 0.16355 1"/>
+<material name="lh_gray" specular="0.0" shininess="0.25" rgba="0.80848 0.80848 0.80848 1"/>
+<material name="lh_metallic" specular="0" shininess="0.25" rgba="0.9 0.9 0.9 1"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/forearm_0.obj" name="lh_forearm_0"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/forearm_1.obj" name="lh_forearm_1"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/forearm_collision.obj" name="lh_forearm_collision"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/wrist.obj" scale="-0.001 0.001 0.001" name="lh_wrist"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/palm.obj" scale="-0.001 0.001 0.001" name="lh_palm"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_knuckle.obj" name="lh_f_knuckle"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_proximal.obj" name="lh_f_proximal"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_middle.obj" name="lh_f_middle"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_distal_pst.obj" name="lh_f_distal_pst"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/lf_metacarpal.obj" scale="-0.001 0.001 0.001" name="lh_lf_metacarpal"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/th_proximal.obj" name="lh_th_proximal"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/th_middle.obj" name="lh_th_middle"/>
+<mesh class="lh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/th_distal_pst.obj" name="lh_th_distal_pst"/>
+<material name="rh_black" specular="0.5" shininess="0.25" rgba="0.16355 0.16355 0.16355 1"/>
+<material name="rh_gray" specular="0.0" shininess="0.25" rgba="0.80848 0.80848 0.80848 1"/>
+<material name="rh_metallic" specular="0" shininess="0.25" rgba="0.9 0.9 0.9 1"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/forearm_0.obj" name="rh_forearm_0"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/forearm_1.obj" name="rh_forearm_1"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/forearm_collision.obj" name="rh_forearm_collision"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/wrist.obj" name="rh_wrist"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/palm.obj" name="rh_palm"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_knuckle.obj" name="rh_f_knuckle"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_proximal.obj" name="rh_f_proximal"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_middle.obj" name="rh_f_middle"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/f_distal_pst.obj" name="rh_f_distal_pst"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/lf_metacarpal.obj" name="rh_lf_metacarpal"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/th_proximal.obj" name="rh_th_proximal"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/th_middle.obj" name="rh_th_middle"/>
+<mesh class="rh_hand" file="../third_party/mujoco_menagerie/shadow_hand/assets/th_distal_pst.obj" name="rh_th_distal_pst"/>
+  </asset>
+
+  <worldbody>
+    <geom name="floor" type="plane" size="5 5 0.1" pos="0 0 0" rgba="0.85 0.85 0.87 1" friction="1.2 0.3 0.05"/>
+    <geom name="table" class="table" size="0.45 0.4 0.05" pos="0.0 0.0 0.45"/>
+
+    <body name="pen" pos="0.0 0.0 0.509" quat="0.7071068 0 0.7071068 0">
+      <freejoint name="pen_joint"/>
+      <geom name="pen_geom" type="cylinder" size="0.008 0.075" mass="0.015"
+        rgba="0.85 0.08 0.08 1" friction="1.0 0.3 0.05" solref="0.01 1"/>
+    </body>
+
+    <light name="key_light" directional="true" pos="-0.5 -0.7 2.2"
+      dir="0.25 0.35 -1" diffuse="0.5 0.5 0.5" specular="0.1 0.1 0.1"/>
+    <light name="fill_light" directional="true" pos="0.6 0.5 1.8"
+      dir="-0.3 -0.25 -1" diffuse="0.3 0.3 0.3" specular="0.05 0.05 0.05"/>
+
+    <camera name="head" pos="0 0 1.6" xyaxes="1 0 0 0 1 0" fovy="60"/>
+<body name="l_base" pos="-0.62 0.0 0.0" quat="1 0 0 0">
+  <body name="l_link0" childclass="l_panda">
+    <inertial mass="0.629769" pos="-0.041018 -0.00014 0.049974" fullinertia="0.00315 0.00388 0.004285 8.2904e-7 0.00015 8.2299e-6"/>
+    <geom mesh="l_link0_0" material="l_off_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_1" material="l_dark_grey" class="l_panda/visual"/>
+    <geom mesh="l_link0_2" material="l_off_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_3" material="l_dark_grey" class="l_panda/visual"/>
+    <geom mesh="l_link0_4" material="l_off_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_5" material="l_dark_grey" class="l_panda/visual"/>
+    <geom mesh="l_link0_7" material="l_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_8" material="l_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_9" material="l_dark_grey" class="l_panda/visual"/>
+    <geom mesh="l_link0_10" material="l_off_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_11" material="l_white" class="l_panda/visual"/>
+    <geom mesh="l_link0_c" class="l_panda/collision"/>
+    <body name="l_link1" pos="0 0 0.333">
+      <inertial mass="4.970684" pos="0.003875 0.002081 -0.04762" fullinertia="0.70337 0.70661 0.0091170 -0.00013900 0.0067720 0.019169"/>
+      <joint name="l_joint1" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.1"/>
+      <geom material="l_white" mesh="l_link1" class="l_panda/visual"/>
+      <geom mesh="l_link1_c" class="l_panda/collision"/>
+      <body name="l_link2" quat="1 -1 0 0">
+        <inertial mass="0.646926" pos="-0.003141 -0.02872 0.003495" fullinertia="0.0079620 2.8110e-2 2.5995e-2 -3.925e-3 1.0254e-2 7.04e-4"/>
+        <joint name="l_joint2" pos="0 0 0" axis="0 0 1" limited="true" range="-1.7628 1.7628" damping="0.1"/>
+        <geom material="l_white" mesh="l_link2" class="l_panda/visual"/>
+        <geom mesh="l_link2_c" class="l_panda/collision"/>
+        <body name="l_link3" pos="0 -0.316 0" quat="1 1 0 0">
+          <joint name="l_joint3" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.1"/>
+          <inertial mass="3.228604" pos="2.7518e-2 3.9252e-2 -6.6502e-2" fullinertia="3.7242e-2 3.6155e-2 1.083e-2 -4.761e-3 -1.1396e-2 -1.2805e-2"/>
+          <geom mesh="l_link3_0" material="l_white" class="l_panda/visual"/>
+          <geom mesh="l_link3_1" material="l_white" class="l_panda/visual"/>
+          <geom mesh="l_link3_2" material="l_white" class="l_panda/visual"/>
+          <geom mesh="l_link3_3" material="l_dark_grey" class="l_panda/visual"/>
+          <geom mesh="l_link3_c" class="l_panda/collision"/>
+          <body name="l_link4" pos="0.0825 0 0" quat="1 1 0 0">
+            <inertial mass="3.587895" pos="-5.317e-2 1.04419e-1 2.7454e-2" fullinertia="2.5853e-2 1.9552e-2 2.8323e-2 7.796e-3 -1.332e-3 8.641e-3"/>
+            <joint name="l_joint4" pos="0 0 0" axis="0 0 1" limited="true" range="-3.0718 -0.0698" damping="0.1"/>
+            <geom mesh="l_link4_0" material="l_white" class="l_panda/visual"/>
+            <geom mesh="l_link4_1" material="l_white" class="l_panda/visual"/>
+            <geom mesh="l_link4_2" material="l_dark_grey" class="l_panda/visual"/>
+            <geom mesh="l_link4_3" material="l_white" class="l_panda/visual"/>
+            <geom mesh="l_link4_c" class="l_panda/collision"/>
+            <body name="l_link5" pos="-0.0825 0.384 0" quat="1 -1 0 0">
+              <inertial mass="1.225946" pos="-1.1953e-2 4.1065e-2 -3.8437e-2" fullinertia="3.5549e-2 2.9474e-2 8.627e-3 -2.117e-3 -4.037e-3 2.29e-4"/>
+              <joint name="l_joint5" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.1"/>
+              <geom mesh="l_link5_0" material="l_dark_grey" class="l_panda/visual"/>
+              <geom mesh="l_link5_1" material="l_white" class="l_panda/visual"/>
+              <geom mesh="l_link5_2" material="l_white" class="l_panda/visual"/>
+              <geom mesh="l_link5_c0" class="l_panda/collision"/>
+              <geom mesh="l_link5_c1" class="l_panda/collision"/>
+              <geom mesh="l_link5_c2" class="l_panda/collision"/>
+              <body name="l_link6" quat="1 1 0 0">
+                <inertial mass="1.666555" pos="6.0149e-2 -1.4117e-2 -1.0517e-2" fullinertia="1.964e-3 4.354e-3 5.433e-3 1.09e-4 -1.158e-3 3.41e-4"/>
+                <joint name="l_joint6" pos="0 0 0" axis="0 0 1" limited="true" range="-0.0175 3.7525" damping="0.01"/>
+                <geom mesh="l_link6_0" material="l_off_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_1" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_2" material="l_dark_grey" class="l_panda/visual"/>
+                <geom mesh="l_link6_3" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_4" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_5" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_6" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_7" material="l_light_blue" class="l_panda/visual"/>
+                <geom mesh="l_link6_8" material="l_light_blue" class="l_panda/visual"/>
+                <geom mesh="l_link6_9" material="l_dark_grey" class="l_panda/visual"/>
+                <geom mesh="l_link6_10" material="l_dark_grey" class="l_panda/visual"/>
+                <geom mesh="l_link6_11" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_12" material="l_green" class="l_panda/visual"/>
+                <geom mesh="l_link6_13" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_14" material="l_dark_grey" class="l_panda/visual"/>
+                <geom mesh="l_link6_15" material="l_dark_grey" class="l_panda/visual"/>
+                <geom mesh="l_link6_16" material="l_white" class="l_panda/visual"/>
+                <geom mesh="l_link6_c" class="l_panda/collision"/>
+                <body name="l_link7" pos="0.088 0 0" quat="1 1 0 0">
+                  <inertial mass="7.35522e-01" pos="1.0517e-2 -4.252e-3 6.1597e-2" fullinertia="1.2516e-2 1.0027e-2 4.815e-3 -4.28e-4 -1.196e-3 -7.41e-4"/>
+                  <joint name="l_joint7" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.01"/>
+                  <geom mesh="l_link7_0" material="l_white" class="l_panda/visual"/>
+                  <geom mesh="l_link7_1" material="l_dark_grey" class="l_panda/visual"/>
+                  <geom mesh="l_link7_2" material="l_dark_grey" class="l_panda/visual"/>
+                  <geom mesh="l_link7_3" material="l_dark_grey" class="l_panda/visual"/>
+                  <geom mesh="l_link7_4" material="l_dark_grey" class="l_panda/visual"/>
+                  <geom mesh="l_link7_5" material="l_dark_grey" class="l_panda/visual"/>
+                  <geom mesh="l_link7_6" material="l_dark_grey" class="l_panda/visual"/>
+                  <geom mesh="l_link7_7" material="l_white" class="l_panda/visual"/>
+                  <geom mesh="l_link7_c" class="l_panda/collision"/>
+                  <body name="l_attachment" pos="0 0 0.107" quat="0.3826834 0 0 0.9238795">
+<body name="lh_forearm" childclass="lh_hand" quat="0 0 0.7071068 0.7071068" pos="0 0 0.02">
+  <inertial mass="3" pos="0 0 0.09" diaginertia="0.0138 0.0138 0.00744"/>
+  <geom class="lh_plastic_visual" mesh="lh_forearm_0" material="lh_gray"/>
+  <geom class="lh_plastic_visual" mesh="lh_forearm_1"/>
+  <geom class="lh_plastic_collision" type="mesh" mesh="lh_forearm_collision"/>
+  <geom class="lh_plastic_collision" size="0.035 0.035 0.035" pos="0.01 0.0 0.181" quat="0.380188 0.924909 0 0" type="box"/>
+  <body name="lh_wrist" pos="0.01 0 0.21301" quat="1 0 0 1">
+    <inertial mass="0.1" pos="0 0 0.029" quat="0.5 0.5 0.5 0.5" diaginertia="6.4e-05 4.38e-05 3.5e-05"/>
+    <joint class="lh_wrist_y" name="lh_WRJ2"/>
+    <geom class="lh_plastic_visual" mesh="lh_wrist" material="lh_metallic"/>
+    <geom size="0.0135 0.015" quat="0.499998 0.5 0.5 -0.500002" type="cylinder" class="lh_plastic_collision"/>
+    <geom size="0.011 0.005" pos="0.026 0 0.034" quat="1 0 1 0" type="cylinder" class="lh_plastic_collision"/>
+    <geom size="0.011 0.005" pos="-0.031 0 0.034" quat="1 0 1 0" type="cylinder" class="lh_plastic_collision"/>
+    <geom size="0.0135 0.009 0.005" pos="0.021 0 0.011" quat="-0.923879 0 0.382684 0" type="box" class="lh_plastic_collision"/>
+    <geom size="0.0135 0.009 0.005" pos="-0.026 0 0.01" quat="-0.923879 0 -0.382684 0" type="box" class="lh_plastic_collision"/>
+    <body name="lh_palm" pos="0 0 0.034">
+      <inertial mass="0.3" pos="0 0 0.035" quat="1 0 0 1" diaginertia="0.0005287 0.0003581 0.000191"/>
+      <joint class="lh_wrist_x" name="lh_WRJ1"/>
+      <geom class="lh_plastic_visual" mesh="lh_palm"/>
+      <geom size="0.031 0.0035 0.049" pos="-0.011 0.0085 0.038" type="box" class="lh_plastic_collision"/>
+      <geom size="0.018 0.0085 0.049" pos="0.002 -0.0035 0.038" type="box" class="lh_plastic_collision"/>
+      <geom size="0.013 0.0085 0.005" pos="-0.029 -0.0035 0.082" type="box" class="lh_plastic_collision"/>
+      <geom size="0.013 0.007 0.009" pos="-0.0265 -0.001 0.07" quat="0.987241 0.0990545 0.0124467 -0.124052" type="box" class="lh_plastic_collision"/>
+      <geom size="0.0105 0.0135 0.0112" pos="-0.0315 -0.0085 0.001" type="box" class="lh_plastic_collision"/>
+      <geom size="0.011 0.0025 0.015" pos="-0.0125 -0.015 0.004" quat="-0.971338 0 0 -0.237703" type="box" class="lh_plastic_collision"/>
+      <geom size="0.009 0.012 0.002" pos="-0.011 0 0.089" type="box" class="lh_plastic_collision"/>
+      <geom size="0.01 0.012 0.02" pos="0.03 0 0.009" type="box" class="lh_plastic_collision"/>
+      <body name="lh_ffknuckle" pos="-0.033 0 0.095">
+        <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+        <joint name="lh_FFJ4" class="lh_knuckle" axis="0 1 0"/>
+        <geom pos="0 0 0.0005" class="lh_plastic_visual" mesh="lh_f_knuckle" material="lh_metallic"/>
+        <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="lh_plastic_collision"/>
+        <body name="lh_ffproximal">
+          <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+          <joint name="lh_FFJ3" class="lh_proximal"/>
+          <geom class="lh_plastic_visual" mesh="lh_f_proximal"/>
+          <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="lh_plastic_collision"/>
+          <body name="lh_ffmiddle" pos="0 0 0.045">
+            <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+            <joint name="lh_FFJ2" class="lh_middle_distal"/>
+            <geom class="lh_plastic_visual" mesh="lh_f_middle"/>
+            <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="lh_plastic_collision"/>
+            <body name="lh_ffdistal" pos="0 0 0.025">
+              <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+              <joint name="lh_FFJ1" class="lh_middle_distal"/>
+              <geom class="lh_plastic_visual" mesh="lh_f_distal_pst"/>
+              <geom class="lh_plastic_collision" type="mesh" mesh="lh_f_distal_pst"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="lh_mfknuckle" pos="-0.011 0 0.099">
+        <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+        <joint name="lh_MFJ4" class="lh_knuckle" axis="0 1 0"/>
+        <geom pos="0 0 0.0005" class="lh_plastic_visual" mesh="lh_f_knuckle" material="lh_metallic"/>
+        <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="lh_plastic_collision"/>
+        <body name="lh_mfproximal">
+          <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+          <joint name="lh_MFJ3" class="lh_proximal"/>
+          <geom class="lh_plastic_visual" mesh="lh_f_proximal"/>
+          <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="lh_plastic_collision"/>
+          <body name="lh_mfmiddle" pos="0 0 0.045">
+            <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+            <joint name="lh_MFJ2" class="lh_middle_distal"/>
+            <geom class="lh_plastic_visual" mesh="lh_f_middle"/>
+            <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="lh_plastic_collision"/>
+            <body name="lh_mfdistal" pos="0 0 0.025">
+              <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+              <joint name="lh_MFJ1" class="lh_middle_distal"/>
+              <geom class="lh_plastic_visual" mesh="lh_f_distal_pst"/>
+              <geom class="lh_plastic_collision" type="mesh" mesh="lh_f_distal_pst"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="lh_rfknuckle" pos="0.011 0 0.095">
+        <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+        <joint name="lh_RFJ4" class="lh_knuckle"/>
+        <geom pos="0 0 0.0005" class="lh_plastic_visual" mesh="lh_f_knuckle" material="lh_metallic"/>
+        <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="lh_plastic_collision"/>
+        <body name="lh_rfproximal">
+          <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+          <joint name="lh_RFJ3" class="lh_proximal"/>
+          <geom class="lh_plastic_visual" mesh="lh_f_proximal"/>
+          <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="lh_plastic_collision"/>
+          <body name="lh_rfmiddle" pos="0 0 0.045">
+            <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+            <joint name="lh_RFJ2" class="lh_middle_distal"/>
+            <geom class="lh_plastic_visual" mesh="lh_f_middle"/>
+            <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="lh_plastic_collision"/>
+            <body name="lh_rfdistal" pos="0 0 0.025">
+              <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+              <joint name="lh_RFJ1" class="lh_middle_distal"/>
+              <geom class="lh_plastic_visual" mesh="lh_f_distal_pst"/>
+              <geom class="lh_plastic_collision" type="mesh" mesh="lh_f_distal_pst"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="lh_lfmetacarpal" pos="0.033 0 0.02071">
+        <inertial mass="0.03" pos="0 0 0.04" quat="1 0 0 1" diaginertia="1.638e-05 1.45e-05 4.272e-06"/>
+        <joint name="lh_LFJ5" class="lh_metacarpal" axis="0.573576 0 -0.819152"/>
+        <geom class="lh_plastic_visual" mesh="lh_lf_metacarpal"/>
+        <geom size="0.011 0.012 0.025" pos="-0.002 0 0.033" type="box" class="lh_plastic_collision"/>
+        <body name="lh_lfknuckle" pos="0 0 0.06579">
+          <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+          <joint name="lh_LFJ4" class="lh_knuckle"/>
+          <geom pos="0 0 0.0005" class="lh_plastic_visual" mesh="lh_f_knuckle" material="lh_metallic"/>
+          <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="lh_plastic_collision"/>
+          <body name="lh_lfproximal">
+            <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+            <joint name="lh_LFJ3" class="lh_proximal"/>
+            <geom class="lh_plastic_visual" mesh="lh_f_proximal"/>
+            <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="lh_plastic_collision"/>
+            <body name="lh_lfmiddle" pos="0 0 0.045">
+              <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+              <joint name="lh_LFJ2" class="lh_middle_distal"/>
+              <geom class="lh_plastic_visual" mesh="lh_f_middle"/>
+              <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="lh_plastic_collision"/>
+              <body name="lh_lfdistal" pos="0 0 0.025">
+                <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+                <joint name="lh_LFJ1" class="lh_middle_distal"/>
+                <geom class="lh_plastic_visual" mesh="lh_f_distal_pst"/>
+                <geom class="lh_plastic_collision" type="mesh" mesh="lh_f_distal_pst"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="lh_thbase" pos="-0.034 -0.00858 0.029" quat="0 -0.382683 0 0.92388">
+        <inertial mass="0.01" pos="0 0 0" diaginertia="1.6e-07 1.6e-07 1.6e-07"/>
+        <joint name="lh_THJ5" class="lh_thbase"/>
+        <geom class="lh_plastic_collision" size="0.013"/>
+        <body name="lh_thproximal">
+          <inertial mass="0.04" pos="0 0 0.019" diaginertia="1.36e-05 1.36e-05 3.13e-06"/>
+          <joint name="lh_THJ4" class="lh_thproximal"/>
+          <geom class="lh_plastic_visual" mesh="lh_th_proximal"/>
+          <geom class="lh_plastic_collision" size="0.0105 0.009" pos="0 0 0.02" type="capsule"/>
+          <body name="lh_thhub" pos="0 0 0.038">
+            <inertial mass="0.005" pos="0 0 0" diaginertia="1e-06 1e-06 3e-07"/>
+            <joint name="lh_THJ3" class="lh_thhub"/>
+            <geom size="0.011" class="lh_plastic_collision"/>
+            <body name="lh_thmiddle">
+              <inertial mass="0.02" pos="0 0 0.016" diaginertia="5.1e-06 5.1e-06 1.21e-06"/>
+              <joint name="lh_THJ2" class="lh_thmiddle"/>
+              <geom class="lh_plastic_visual" mesh="lh_th_middle"/>
+              <geom size="0.009 0.009" pos="0 0 0.012" type="capsule" class="lh_plastic_collision"/>
+              <geom size="0.01" pos="0 0 0.03" class="lh_plastic_collision"/>
+              <body name="lh_thdistal" pos="0 0 0.032" quat="1 0 0 -1">
+                <inertial mass="0.017" pos="0 0 0.0145588" quat="1 0 0 1" diaginertia="2.37794e-06 2.27794e-06 1e-06"/>
+                <joint name="lh_THJ1" class="lh_thdistal"/>
+                <geom class="lh_plastic_visual" mesh="lh_th_distal_pst"/>
+                <geom class="lh_plastic_collision" type="mesh" mesh="lh_th_distal_pst"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <camera name="left_wrist" pos="0.0 0.055 -0.015" xyaxes="1 0 0 0 -0.966 -0.259" fovy="75"/>
+      <site name="lh_grasp_site" pos="0 -0.035 0.09" size="0.005" rgba="0.1 0.9 0.1 0.6"/>
+    </body>
+  </body>
+</body>
+                    <site name="l_attachment_site"/>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </body>
+</body>
+<body name="r_base" pos="0.62 0.0 0.0" quat="0 0 0 1">
+  <body name="r_link0" childclass="r_panda">
+    <inertial mass="0.629769" pos="-0.041018 -0.00014 0.049974" fullinertia="0.00315 0.00388 0.004285 8.2904e-7 0.00015 8.2299e-6"/>
+    <geom mesh="r_link0_0" material="r_off_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_1" material="r_dark_grey" class="r_panda/visual"/>
+    <geom mesh="r_link0_2" material="r_off_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_3" material="r_dark_grey" class="r_panda/visual"/>
+    <geom mesh="r_link0_4" material="r_off_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_5" material="r_dark_grey" class="r_panda/visual"/>
+    <geom mesh="r_link0_7" material="r_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_8" material="r_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_9" material="r_dark_grey" class="r_panda/visual"/>
+    <geom mesh="r_link0_10" material="r_off_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_11" material="r_white" class="r_panda/visual"/>
+    <geom mesh="r_link0_c" class="r_panda/collision"/>
+    <body name="r_link1" pos="0 0 0.333">
+      <inertial mass="4.970684" pos="0.003875 0.002081 -0.04762" fullinertia="0.70337 0.70661 0.0091170 -0.00013900 0.0067720 0.019169"/>
+      <joint name="r_joint1" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.1"/>
+      <geom material="r_white" mesh="r_link1" class="r_panda/visual"/>
+      <geom mesh="r_link1_c" class="r_panda/collision"/>
+      <body name="r_link2" quat="1 -1 0 0">
+        <inertial mass="0.646926" pos="-0.003141 -0.02872 0.003495" fullinertia="0.0079620 2.8110e-2 2.5995e-2 -3.925e-3 1.0254e-2 7.04e-4"/>
+        <joint name="r_joint2" pos="0 0 0" axis="0 0 1" limited="true" range="-1.7628 1.7628" damping="0.1"/>
+        <geom material="r_white" mesh="r_link2" class="r_panda/visual"/>
+        <geom mesh="r_link2_c" class="r_panda/collision"/>
+        <body name="r_link3" pos="0 -0.316 0" quat="1 1 0 0">
+          <joint name="r_joint3" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.1"/>
+          <inertial mass="3.228604" pos="2.7518e-2 3.9252e-2 -6.6502e-2" fullinertia="3.7242e-2 3.6155e-2 1.083e-2 -4.761e-3 -1.1396e-2 -1.2805e-2"/>
+          <geom mesh="r_link3_0" material="r_white" class="r_panda/visual"/>
+          <geom mesh="r_link3_1" material="r_white" class="r_panda/visual"/>
+          <geom mesh="r_link3_2" material="r_white" class="r_panda/visual"/>
+          <geom mesh="r_link3_3" material="r_dark_grey" class="r_panda/visual"/>
+          <geom mesh="r_link3_c" class="r_panda/collision"/>
+          <body name="r_link4" pos="0.0825 0 0" quat="1 1 0 0">
+            <inertial mass="3.587895" pos="-5.317e-2 1.04419e-1 2.7454e-2" fullinertia="2.5853e-2 1.9552e-2 2.8323e-2 7.796e-3 -1.332e-3 8.641e-3"/>
+            <joint name="r_joint4" pos="0 0 0" axis="0 0 1" limited="true" range="-3.0718 -0.0698" damping="0.1"/>
+            <geom mesh="r_link4_0" material="r_white" class="r_panda/visual"/>
+            <geom mesh="r_link4_1" material="r_white" class="r_panda/visual"/>
+            <geom mesh="r_link4_2" material="r_dark_grey" class="r_panda/visual"/>
+            <geom mesh="r_link4_3" material="r_white" class="r_panda/visual"/>
+            <geom mesh="r_link4_c" class="r_panda/collision"/>
+            <body name="r_link5" pos="-0.0825 0.384 0" quat="1 -1 0 0">
+              <inertial mass="1.225946" pos="-1.1953e-2 4.1065e-2 -3.8437e-2" fullinertia="3.5549e-2 2.9474e-2 8.627e-3 -2.117e-3 -4.037e-3 2.29e-4"/>
+              <joint name="r_joint5" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.1"/>
+              <geom mesh="r_link5_0" material="r_dark_grey" class="r_panda/visual"/>
+              <geom mesh="r_link5_1" material="r_white" class="r_panda/visual"/>
+              <geom mesh="r_link5_2" material="r_white" class="r_panda/visual"/>
+              <geom mesh="r_link5_c0" class="r_panda/collision"/>
+              <geom mesh="r_link5_c1" class="r_panda/collision"/>
+              <geom mesh="r_link5_c2" class="r_panda/collision"/>
+              <body name="r_link6" quat="1 1 0 0">
+                <inertial mass="1.666555" pos="6.0149e-2 -1.4117e-2 -1.0517e-2" fullinertia="1.964e-3 4.354e-3 5.433e-3 1.09e-4 -1.158e-3 3.41e-4"/>
+                <joint name="r_joint6" pos="0 0 0" axis="0 0 1" limited="true" range="-0.0175 3.7525" damping="0.01"/>
+                <geom mesh="r_link6_0" material="r_off_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_1" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_2" material="r_dark_grey" class="r_panda/visual"/>
+                <geom mesh="r_link6_3" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_4" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_5" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_6" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_7" material="r_light_blue" class="r_panda/visual"/>
+                <geom mesh="r_link6_8" material="r_light_blue" class="r_panda/visual"/>
+                <geom mesh="r_link6_9" material="r_dark_grey" class="r_panda/visual"/>
+                <geom mesh="r_link6_10" material="r_dark_grey" class="r_panda/visual"/>
+                <geom mesh="r_link6_11" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_12" material="r_green" class="r_panda/visual"/>
+                <geom mesh="r_link6_13" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_14" material="r_dark_grey" class="r_panda/visual"/>
+                <geom mesh="r_link6_15" material="r_dark_grey" class="r_panda/visual"/>
+                <geom mesh="r_link6_16" material="r_white" class="r_panda/visual"/>
+                <geom mesh="r_link6_c" class="r_panda/collision"/>
+                <body name="r_link7" pos="0.088 0 0" quat="1 1 0 0">
+                  <inertial mass="7.35522e-01" pos="1.0517e-2 -4.252e-3 6.1597e-2" fullinertia="1.2516e-2 1.0027e-2 4.815e-3 -4.28e-4 -1.196e-3 -7.41e-4"/>
+                  <joint name="r_joint7" pos="0 0 0" axis="0 0 1" limited="true" range="-2.8973 2.8973" damping="0.01"/>
+                  <geom mesh="r_link7_0" material="r_white" class="r_panda/visual"/>
+                  <geom mesh="r_link7_1" material="r_dark_grey" class="r_panda/visual"/>
+                  <geom mesh="r_link7_2" material="r_dark_grey" class="r_panda/visual"/>
+                  <geom mesh="r_link7_3" material="r_dark_grey" class="r_panda/visual"/>
+                  <geom mesh="r_link7_4" material="r_dark_grey" class="r_panda/visual"/>
+                  <geom mesh="r_link7_5" material="r_dark_grey" class="r_panda/visual"/>
+                  <geom mesh="r_link7_6" material="r_dark_grey" class="r_panda/visual"/>
+                  <geom mesh="r_link7_7" material="r_white" class="r_panda/visual"/>
+                  <geom mesh="r_link7_c" class="r_panda/collision"/>
+                  <body name="r_attachment" pos="0 0 0.107" quat="0.3826834 0 0 0.9238795">
+<body name="rh_forearm" childclass="rh_hand" quat="0 0 0.7071068 0.7071068" pos="0 0 0.02">
+  <inertial mass="3" pos="0 0 0.09" diaginertia="0.0138 0.0138 0.00744"/>
+  <geom class="rh_plastic_visual" mesh="rh_forearm_0" material="rh_gray"/>
+  <geom class="rh_plastic_visual" mesh="rh_forearm_1"/>
+  <geom class="rh_plastic_collision" type="mesh" mesh="rh_forearm_collision"/>
+  <geom class="rh_plastic_collision" size="0.035 0.035 0.035" pos="0.01 0.0 0.181" quat="0.380188 0.924909 0 0" type="box"/>
+  <body name="rh_wrist" pos="0.01 0 0.21301" quat="1 0 0 1">
+    <inertial mass="0.1" pos="0 0 0.029" quat="0.5 0.5 0.5 0.5" diaginertia="6.4e-05 4.38e-05 3.5e-05"/>
+    <joint class="rh_wrist_y" name="rh_WRJ2"/>
+    <geom class="rh_plastic_visual" mesh="rh_wrist" material="rh_metallic"/>
+    <geom size="0.0135 0.015" quat="0.499998 0.5 0.5 -0.500002" type="cylinder" class="rh_plastic_collision"/>
+    <geom size="0.011 0.005" pos="-0.026 0 0.034" quat="1 0 1 0" type="cylinder" class="rh_plastic_collision"/>
+    <geom size="0.011 0.005" pos="0.031 0 0.034" quat="1 0 1 0" type="cylinder" class="rh_plastic_collision"/>
+    <geom size="0.0135 0.009 0.005" pos="-0.021 0 0.011" quat="0.923879 0 0.382684 0" type="box" class="rh_plastic_collision"/>
+    <geom size="0.0135 0.009 0.005" pos="0.026 0 0.01" quat="0.923879 0 -0.382684 0" type="box" class="rh_plastic_collision"/>
+    <body name="rh_palm" pos="0 0 0.034">
+      <inertial mass="0.3" pos="0 0 0.035" quat="1 0 0 1" diaginertia="0.0005287 0.0003581 0.000191"/>
+      <joint class="rh_wrist_x" name="rh_WRJ1"/>
+      <geom class="rh_plastic_visual" mesh="rh_palm"/>
+      <geom size="0.031 0.0035 0.049" pos="0.011 0.0085 0.038" type="box" class="rh_plastic_collision"/>
+      <geom size="0.018 0.0085 0.049" pos="-0.002 -0.0035 0.038" type="box" class="rh_plastic_collision"/>
+      <geom size="0.013 0.0085 0.005" pos="0.029 -0.0035 0.082" type="box" class="rh_plastic_collision"/>
+      <geom size="0.013 0.007 0.009" pos="0.0265 -0.001 0.07" quat="0.987241 0.0990545 0.0124467 0.124052" type="box" class="rh_plastic_collision"/>
+      <geom size="0.0105 0.0135 0.012" pos="0.0315 -0.0085 0.001" type="box" class="rh_plastic_collision"/>
+      <geom size="0.011 0.0025 0.015" pos="0.0125 -0.015 0.004" quat="0.971338 0 0 -0.237703" type="box" class="rh_plastic_collision"/>
+      <geom size="0.009 0.012 0.002" pos="0.011 0 0.089" type="box" class="rh_plastic_collision"/>
+      <geom size="0.01 0.012 0.02" pos="-0.03 0 0.009" type="box" class="rh_plastic_collision"/>
+      <body name="rh_ffknuckle" pos="0.033 0 0.095">
+        <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+        <joint name="rh_FFJ4" class="rh_knuckle"/>
+        <geom pos="0 0 0.0005" class="rh_plastic_visual" mesh="rh_f_knuckle" material="rh_metallic"/>
+        <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="rh_plastic_collision"/>
+        <body name="rh_ffproximal">
+          <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+          <joint name="rh_FFJ3" class="rh_proximal"/>
+          <geom class="rh_plastic_visual" mesh="rh_f_proximal"/>
+          <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="rh_plastic_collision"/>
+          <body name="rh_ffmiddle" pos="0 0 0.045">
+            <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+            <joint name="rh_FFJ2" class="rh_middle_distal"/>
+            <geom class="rh_plastic_visual" mesh="rh_f_middle"/>
+            <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="rh_plastic_collision"/>
+            <body name="rh_ffdistal" pos="0 0 0.025">
+              <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+              <joint name="rh_FFJ1" class="rh_middle_distal"/>
+              <geom class="rh_plastic_visual" mesh="rh_f_distal_pst"/>
+              <geom class="rh_plastic_collision" type="mesh" mesh="rh_f_distal_pst"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rh_mfknuckle" pos="0.011 0 0.099">
+        <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+        <joint name="rh_MFJ4" class="rh_knuckle"/>
+        <geom pos="0 0 0.0005" class="rh_plastic_visual" mesh="rh_f_knuckle" material="rh_metallic"/>
+        <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="rh_plastic_collision"/>
+        <body name="rh_mfproximal">
+          <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+          <joint name="rh_MFJ3" class="rh_proximal"/>
+          <geom class="rh_plastic_visual" mesh="rh_f_proximal"/>
+          <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="rh_plastic_collision"/>
+          <body name="rh_mfmiddle" pos="0 0 0.045">
+            <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+            <joint name="rh_MFJ2" class="rh_middle_distal"/>
+            <geom class="rh_plastic_visual" mesh="rh_f_middle"/>
+            <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="rh_plastic_collision"/>
+            <body name="rh_mfdistal" pos="0 0 0.025">
+              <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+              <joint name="rh_MFJ1" class="rh_middle_distal"/>
+              <geom class="rh_plastic_visual" mesh="rh_f_distal_pst"/>
+              <geom class="rh_plastic_collision" type="mesh" mesh="rh_f_distal_pst"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rh_rfknuckle" pos="-0.011 0 0.095">
+        <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+        <joint name="rh_RFJ4" class="rh_knuckle" axis="0 1 0"/>
+        <geom pos="0 0 0.0005" class="rh_plastic_visual" mesh="rh_f_knuckle" material="rh_metallic"/>
+        <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="rh_plastic_collision"/>
+        <body name="rh_rfproximal">
+          <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+          <joint name="rh_RFJ3" class="rh_proximal"/>
+          <geom class="rh_plastic_visual" mesh="rh_f_proximal"/>
+          <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="rh_plastic_collision"/>
+          <body name="rh_rfmiddle" pos="0 0 0.045">
+            <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+            <joint name="rh_RFJ2" class="rh_middle_distal"/>
+            <geom class="rh_plastic_visual" mesh="rh_f_middle"/>
+            <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="rh_plastic_collision"/>
+            <body name="rh_rfdistal" pos="0 0 0.025">
+              <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+              <joint name="rh_RFJ1" class="rh_middle_distal"/>
+              <geom class="rh_plastic_visual" mesh="rh_f_distal_pst"/>
+              <geom class="rh_plastic_collision" type="mesh" mesh="rh_f_distal_pst"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rh_lfmetacarpal" pos="-0.033 0 0.02071">
+        <inertial mass="0.03" pos="0 0 0.04" quat="1 0 0 1" diaginertia="1.638e-05 1.45e-05 4.272e-06"/>
+        <joint name="rh_LFJ5" class="rh_metacarpal"/>
+        <geom class="rh_plastic_visual" mesh="rh_lf_metacarpal"/>
+        <geom size="0.011 0.012 0.025" pos="0.002 0 0.033" type="box" class="rh_plastic_collision"/>
+        <body name="rh_lfknuckle" pos="0 0 0.06579">
+          <inertial mass="0.008" pos="0 0 0" quat="0.5 0.5 -0.5 0.5" diaginertia="3.2e-07 2.6e-07 2.6e-07"/>
+          <joint name="rh_LFJ4" class="rh_knuckle" axis="0 1 0"/>
+          <geom pos="0 0 0.0005" class="rh_plastic_visual" mesh="rh_f_knuckle" material="rh_metallic"/>
+          <geom size="0.009 0.009" quat="1 0 1 0" type="cylinder" class="rh_plastic_collision"/>
+          <body name="rh_lfproximal">
+            <inertial mass="0.03" pos="0 0 0.0225" quat="1 0 0 1" diaginertia="1e-05 9.8e-06 1.8e-06"/>
+            <joint name="rh_LFJ3" class="rh_proximal"/>
+            <geom class="rh_plastic_visual" mesh="rh_f_proximal"/>
+            <geom size="0.009 0.02" pos="0 0 0.025" type="capsule" class="rh_plastic_collision"/>
+            <body name="rh_lfmiddle" pos="0 0 0.045">
+              <inertial mass="0.017" pos="0 0 0.0125" quat="1 0 0 1" diaginertia="2.7e-06 2.6e-06 8.7e-07"/>
+              <joint name="rh_LFJ2" class="rh_middle_distal"/>
+              <geom class="rh_plastic_visual" mesh="rh_f_middle"/>
+              <geom size="0.009 0.0125" pos="0 0 0.0125" type="capsule" class="rh_plastic_collision"/>
+              <body name="rh_lfdistal" pos="0 0 0.025">
+                <inertial mass="0.013" pos="0 0 0.0130769" quat="1 0 0 1" diaginertia="1.28092e-06 1.12092e-06 5.3e-07"/>
+                <joint name="rh_LFJ1" class="rh_middle_distal"/>
+                <geom class="rh_plastic_visual" mesh="rh_f_distal_pst"/>
+                <geom class="rh_plastic_collision" type="mesh" mesh="rh_f_distal_pst"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <body name="rh_thbase" pos="0.034 -0.00858 0.029" quat="0.92388 0 0.382683 0">
+        <inertial mass="0.01" pos="0 0 0" diaginertia="1.6e-07 1.6e-07 1.6e-07"/>
+        <joint name="rh_THJ5" class="rh_thbase"/>
+        <geom class="rh_plastic_collision" size="0.013"/>
+        <body name="rh_thproximal">
+          <inertial mass="0.04" pos="0 0 0.019" diaginertia="1.36e-05 1.36e-05 3.13e-06"/>
+          <joint name="rh_THJ4" class="rh_thproximal"/>
+          <geom class="rh_plastic_visual" mesh="rh_th_proximal"/>
+          <geom class="rh_plastic_collision" size="0.0105 0.009" pos="0 0 0.02" type="capsule"/>
+          <body name="rh_thhub" pos="0 0 0.038">
+            <inertial mass="0.005" pos="0 0 0" diaginertia="1e-06 1e-06 3e-07"/>
+            <joint name="rh_THJ3" class="rh_thhub"/>
+            <geom size="0.011" class="rh_plastic_collision"/>
+            <body name="rh_thmiddle">
+              <inertial mass="0.02" pos="0 0 0.016" diaginertia="5.1e-06 5.1e-06 1.21e-06"/>
+              <joint name="rh_THJ2" class="rh_thmiddle"/>
+              <geom class="rh_plastic_visual" mesh="rh_th_middle"/>
+              <geom size="0.009 0.009" pos="0 0 0.012" type="capsule" class="rh_plastic_collision"/>
+              <geom size="0.01" pos="0 0 0.03" class="rh_plastic_collision"/>
+              <body name="rh_thdistal" pos="0 0 0.032" quat="1 0 0 -1">
+                <inertial mass="0.017" pos="0 0 0.0145588" quat="1 0 0 1" diaginertia="2.37794e-06 2.27794e-06 1e-06"/>
+                <joint name="rh_THJ1" class="rh_thdistal"/>
+                <geom class="rh_plastic_visual" mesh="rh_th_distal_pst"/>
+                <geom class="rh_plastic_collision" type="mesh" mesh="rh_th_distal_pst"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+      <camera name="right_wrist" pos="0.0 0.055 -0.015" xyaxes="1 0 0 0 -0.966 -0.259" fovy="75"/>
+      <site name="rh_grasp_site" pos="0 -0.035 0.09" size="0.005" rgba="0.1 0.9 0.1 0.6"/>
+    </body>
+  </body>
+</body>
+                    <site name="r_attachment_site"/>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </body>
+</body>
+  </worldbody>
+
+  <contact>
+<exclude body1="lh_wrist" body2="lh_forearm"/>
+<exclude body1="lh_thproximal" body2="lh_thmiddle"/>
+<exclude body1="rh_wrist" body2="rh_forearm"/>
+<exclude body1="rh_thproximal" body2="rh_thmiddle"/>
+  </contact>
+
+  <tendon>
+<fixed name="lh_FFJ0">
+  <joint joint="lh_FFJ2" coef="1"/>
+  <joint joint="lh_FFJ1" coef="1"/>
+</fixed>
+<fixed name="lh_MFJ0">
+  <joint joint="lh_MFJ2" coef="1"/>
+  <joint joint="lh_MFJ1" coef="1"/>
+</fixed>
+<fixed name="lh_RFJ0">
+  <joint joint="lh_RFJ2" coef="1"/>
+  <joint joint="lh_RFJ1" coef="1"/>
+</fixed>
+<fixed name="lh_LFJ0">
+  <joint joint="lh_LFJ2" coef="1"/>
+  <joint joint="lh_LFJ1" coef="1"/>
+</fixed>
+<fixed name="rh_FFJ0">
+  <joint joint="rh_FFJ2" coef="1"/>
+  <joint joint="rh_FFJ1" coef="1"/>
+</fixed>
+<fixed name="rh_MFJ0">
+  <joint joint="rh_MFJ2" coef="1"/>
+  <joint joint="rh_MFJ1" coef="1"/>
+</fixed>
+<fixed name="rh_RFJ0">
+  <joint joint="rh_RFJ2" coef="1"/>
+  <joint joint="rh_RFJ1" coef="1"/>
+</fixed>
+<fixed name="rh_LFJ0">
+  <joint joint="rh_LFJ2" coef="1"/>
+  <joint joint="rh_LFJ1" coef="1"/>
+</fixed>
+  </tendon>
+
+  <actuator>
+<position name="l_actuator1" joint="l_joint1" ctrlrange="-2.8973 2.8973" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="l_actuator2" joint="l_joint2" ctrlrange="-1.7628 1.7628" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="l_actuator3" joint="l_joint3" ctrlrange="-2.8973 2.8973" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="l_actuator4" joint="l_joint4" ctrlrange="-3.0718 -0.0698" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="l_actuator5" joint="l_joint5" ctrlrange="-2.8973 2.8973" kp="100.0" forcerange="-87.0 87.0"/>
+<position name="l_actuator6" joint="l_joint6" ctrlrange="-0.0175 3.7525" kp="100.0" forcerange="-12.0 12.0"/>
+<position name="l_actuator7" joint="l_joint7" ctrlrange="-2.8973 2.8973" kp="100.0" forcerange="-12.0 12.0"/>
+<position name="lh_A_WRJ2" joint="lh_WRJ2" class="lh_wrist_y" kp="60" kv="5" forcerange="-12 12"/>
+<position name="lh_A_WRJ1" joint="lh_WRJ1" class="lh_wrist_x" kp="40" kv="4" forcerange="-6 6"/>
+<position name="lh_A_THJ5" joint="lh_THJ5" class="lh_thbase" kp="2.0" forcerange="-5 5"/>
+<position name="lh_A_THJ4" joint="lh_THJ4" class="lh_thproximal" kp="4.0" forcerange="-6 6"/>
+<position name="lh_A_THJ3" joint="lh_THJ3" class="lh_thhub" kp="2.0" forcerange="-2 2"/>
+<position name="lh_A_THJ2" joint="lh_THJ2" class="lh_thmiddle" kp="4.0" forcerange="-3 3"/>
+<position name="lh_A_THJ1" joint="lh_THJ1" class="lh_thdistal" kp="3.0" forcerange="-3 3"/>
+<position name="lh_A_FFJ4" joint="lh_FFJ4" class="lh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="lh_A_FFJ3" joint="lh_FFJ3" class="lh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="lh_A_FFJ0" tendon="lh_FFJ0" class="lh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="lh_A_MFJ4" joint="lh_MFJ4" class="lh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="lh_A_MFJ3" joint="lh_MFJ3" class="lh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="lh_A_MFJ0" tendon="lh_MFJ0" class="lh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="lh_A_RFJ4" joint="lh_RFJ4" class="lh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="lh_A_RFJ3" joint="lh_RFJ3" class="lh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="lh_A_RFJ0" tendon="lh_RFJ0" class="lh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="lh_A_LFJ5" joint="lh_LFJ5" class="lh_metacarpal" kp="3.0" forcerange="-2 2"/>
+<position name="lh_A_LFJ4" joint="lh_LFJ4" class="lh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="lh_A_LFJ3" joint="lh_LFJ3" class="lh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="lh_A_LFJ0" tendon="lh_LFJ0" class="lh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="r_actuator1" joint="r_joint1" ctrlrange="-2.8973 2.8973" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="r_actuator2" joint="r_joint2" ctrlrange="-1.7628 1.7628" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="r_actuator3" joint="r_joint3" ctrlrange="-2.8973 2.8973" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="r_actuator4" joint="r_joint4" ctrlrange="-3.0718 -0.0698" kp="300.0" forcerange="-87.0 87.0"/>
+<position name="r_actuator5" joint="r_joint5" ctrlrange="-2.8973 2.8973" kp="100.0" forcerange="-87.0 87.0"/>
+<position name="r_actuator6" joint="r_joint6" ctrlrange="-0.0175 3.7525" kp="100.0" forcerange="-12.0 12.0"/>
+<position name="r_actuator7" joint="r_joint7" ctrlrange="-2.8973 2.8973" kp="100.0" forcerange="-12.0 12.0"/>
+<position name="rh_A_WRJ2" joint="rh_WRJ2" class="rh_wrist_y" kp="60" kv="5" forcerange="-12 12"/>
+<position name="rh_A_WRJ1" joint="rh_WRJ1" class="rh_wrist_x" kp="40" kv="4" forcerange="-6 6"/>
+<position name="rh_A_THJ5" joint="rh_THJ5" class="rh_thbase" kp="2.0" forcerange="-5 5"/>
+<position name="rh_A_THJ4" joint="rh_THJ4" class="rh_thproximal" kp="4.0" forcerange="-6 6"/>
+<position name="rh_A_THJ3" joint="rh_THJ3" class="rh_thhub" kp="2.0" forcerange="-2 2"/>
+<position name="rh_A_THJ2" joint="rh_THJ2" class="rh_thmiddle" kp="4.0" forcerange="-3 3"/>
+<position name="rh_A_THJ1" joint="rh_THJ1" class="rh_thdistal" kp="3.0" forcerange="-3 3"/>
+<position name="rh_A_FFJ4" joint="rh_FFJ4" class="rh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="rh_A_FFJ3" joint="rh_FFJ3" class="rh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="rh_A_FFJ0" tendon="rh_FFJ0" class="rh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="rh_A_MFJ4" joint="rh_MFJ4" class="rh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="rh_A_MFJ3" joint="rh_MFJ3" class="rh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="rh_A_MFJ0" tendon="rh_MFJ0" class="rh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="rh_A_RFJ4" joint="rh_RFJ4" class="rh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="rh_A_RFJ3" joint="rh_RFJ3" class="rh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="rh_A_RFJ0" tendon="rh_RFJ0" class="rh_middle_distal" kp="2.0" forcerange="-2 2"/>
+<position name="rh_A_LFJ5" joint="rh_LFJ5" class="rh_metacarpal" kp="3.0" forcerange="-2 2"/>
+<position name="rh_A_LFJ4" joint="rh_LFJ4" class="rh_knuckle" kp="3.0" forcerange="-2 2"/>
+<position name="rh_A_LFJ3" joint="rh_LFJ3" class="rh_proximal" kp="4.0" forcerange="-3 3"/>
+<position name="rh_A_LFJ0" tendon="rh_LFJ0" class="rh_middle_distal" kp="2.0" forcerange="-2 2"/>
+  </actuator>
+
+  <keyframe>
+    <key name="home" qpos="0.0 0.0 0.509 0.7071068 0 0.7071068 0 -0.5841 -0.3123 0.2378 -1.303 -0.9488 1.8973 0.4535 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.5929 -0.3362 0.1876 -1.3412 -0.8648 2.2275 0.3358 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" ctrl="-0.5841 -0.3123 0.2378 -1.303 -0.9488 1.8973 0.4535 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -0.5929 -0.3362 0.1876 -1.3412 -0.8648 2.2275 0.3358 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/>
+  </keyframe>
+</mujoco>

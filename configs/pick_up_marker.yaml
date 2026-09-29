@@ -1,0 +1,193 @@
+task: pick_up_marker
+active_hand: right
+control_hz: 20
+track_pen: false  # 观测式跟踪实测净负（0/12），保留开关待改进
+# react_step/react_cap 回归基线默认（0.012）：0.02 在窄网格致中心 hold 掉笔
+frame_tilt:
+  right: -1.517   # -86.9° 侧捏（右手标定）
+  left: 1.517    # 左手镜像
+ik:
+  damping: 0.08
+  pos_gain: 0.9
+  ori_gain: 0.6
+  null_gain: 0.2
+  iters_per_step: 4
+  max_dq: 0.25
+  pos_tol: 0.005
+  ori_tol_deg: 5.0
+wrist:
+- 0.0
+- 0.0
+hand_poses:
+  open:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  pre:
+  - -0.039
+  - -0.5694
+  - -0.1413
+  - 0.8383
+  - 0.199
+  - 0.4945
+  - 0.1291
+  - -0.3497
+  - 0.1074
+  - 0.1341
+  - -0.0541
+  - -0.0751
+  - 0.4761
+  - -0.1062
+  - 0.2738
+  - 0.0271
+  - 0.1551
+  - -0.3593
+  - 0.1445
+  - -0.0085
+  close:
+  - -0.0671
+  - -0.5377
+  - 0.0576
+  - 1.182
+  - 0.1947
+  - 0.5578
+  - 0.2482
+  - -0.3099
+  - 1.128
+  - 0.5084
+  - -0.1352
+  - 0.8652
+  - 0.9426
+  - 0.1724
+  - 1.165
+  - 0.3066
+  - 0.3116
+  - -0.354
+  - 0.9553
+  - 0.8124
+  pinch2:
+  - 0.0188
+  - -0.2686
+  - 0.0308
+  - 1.08
+  - 0.1604
+  - 0.5839
+  - 0.3069
+  - -0.3013
+  - 0.9774
+  - 1.2115
+  - 0.1255
+  - 0.165
+  - 0.3465
+  - 0.17
+  - 1.05
+  - 0.45
+  - 0.31
+  - -0.35
+  - 0.95
+  - 0.78
+  pinch3:
+  - 0.126
+  - -0.057
+  - 0.658
+  - 1.001
+  - 0.29
+  - -0.198
+  - 0.715
+  - 0.106
+  - 1.5
+  - 1.195
+  - 0.493
+  - 1.07
+  - 0.494
+  - -0.008
+  - 1.139
+  - 0.275
+  - 0.229
+  - -0.471
+  - 0.877
+  - 0.65
+  pre_pinch:
+  - 0.126
+  - -0.057
+  - 0.658
+  - 1.001
+  - 0.29
+  - -0.198
+  - 0.715
+  - -0.15
+  - 0.1
+  - 0.0
+  - 0.0
+  - 0.1
+  - 0.0
+  - -0.008
+  - 1.139
+  - 0.275
+  - 0.229
+  - -0.471
+  - 0.877
+  - 0.65
+stages:
+- name: approach
+  duration: 3.0
+  hand: open
+  reference: pen
+  along: 0.0
+  lateral: 0.0
+  vertical: 0.1   # A/B 基线：0.15 在本网格 3/12，待对比
+  orientation: pen_axis_down
+- name: descend
+  duration: 2.0
+  hand: pre   # 回退拇指实验遗留：成功时代（中心 0.6309）descend 用 pre，非 pre_pinch
+  reference: pen
+  along: 0.0
+  lateral: 0.0
+  vertical: -0.017
+  orientation: pen_axis_down
+- name: close
+  duration: 2.5
+  hand: pinch3
+  reference: pen
+  along: 0.0
+  lateral: 0.0
+  vertical: 0.0
+  orientation: pen_axis_down
+- name: lift
+  duration: 2.2
+  hand: pinch3
+  reference: anchor
+  along: 0.0
+  lateral: 0.0
+  vertical: 0.16
+  orientation: pen_axis_down
+- name: hold
+  duration: 0.6
+  hand: pinch3
+  reference: anchor
+  along: 0.0
+  lateral: 0.0
+  vertical: 0.16
+  orientation: pen_axis_down
+grasp_modes:
+- 1
+allowed_hands:
+- left
+- right
