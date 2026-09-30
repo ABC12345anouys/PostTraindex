@@ -189,5 +189,4 @@ stages:
 grasp_modes:
 - 1   # mode0/1 自动选优实测净负（settle 分数与抓取成败不相关）；重试机制覆盖多样性
 allowed_hands:
-- left
-- right
+- right   # 左手 IK 不稳定分支未修，选型会误选致灾难性失败；录数期先单右手
