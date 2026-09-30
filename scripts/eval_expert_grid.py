@@ -23,6 +23,15 @@ GRIDS = {
     "narrow": [(x, y) for x in (-0.05, 0.0, 0.05) for y in (-0.05, 0.0, 0.05)],
     "mid12": [(x, y) for x in (-0.06, -0.02, 0.02, 0.06)
               for y in (-0.09, 0.0, 0.09)],
+    # 采集好区加密：右臂近侧 5×5cm 内 2.5cm 步长插值（narrow 好点子集内部）
+    "good9": [(x, y) for x in (0.0, 0.025, 0.05)
+              for y in (-0.05, -0.025, 0.0)],
+    # 两好列（x∈{0,0.05}）的 y 内部插值验证
+    "colfine": [(x, y) for x in (0.0, 0.05)
+                for y in (-0.0375, -0.0125)],
+    # 3.7.0 好区扩展探测：三条新列 × 四档 y
+    "expand12": [(x, y) for x in (-0.025, 0.025, 0.075)
+                 for y in (-0.05, -0.025, 0.0, 0.025)],
 }
 GRIDS["mid36"] = GRIDS["mid12"]
 
@@ -35,13 +44,19 @@ def main():
     ap.add_argument("--tag", default="run")
     ap.add_argument("--hand", default=None, choices=["left", "right"],
                     help="覆盖 allowed_hands 只用该手（诊断左手不稳定分支用）")
+    ap.add_argument("--mode", type=int, default=None, choices=[0, 1],
+                    help="覆盖 grasp_modes 强制单捏取模式（诊断模式区域互补性用）")
     ap.add_argument("--diag", action="store_true",
                     help="只跑 expert.reset，打印各候选 descend 标定残差，不跑 episode")
+    ap.add_argument("--tries", type=int, default=1,
+                    help="每点最多尝试次数（换 plan_seed 重试，取首次成功）")
     args = ap.parse_args()
 
     cfg = load_config(ROOT / args.cfg)
     if args.hand:
         cfg["allowed_hands"] = [args.hand]
+    if args.mode is not None:
+        cfg["grasp_modes"] = [args.mode]
     yaws = (-30.0, 0.0, 30.0) if args.grid == "mid36" else (0.0,)
     if args.yaw is not None:
         yaws = (args.yaw,)
@@ -77,19 +92,32 @@ def main():
             max_z = 0.0
             stage = cfg["stages"][0]["name"]
             info = {}
-            while True:
-                action = expert.act(obs)
-                obs, _, term, trunc, info = env.step_rad(action)
-                max_z = max(max_z, float(info["pen_z"]))
-                stage = cfg["stages"][min(expert.si, len(cfg["stages"]) - 1)]["name"]
-                if term or trunc:
+            ok = False
+            n_used = 0
+            for attempt in range(max(1, args.tries)):
+                ecfg = dict(cfg)
+                ecfg["plan_seed"] = attempt  # 标定 RNG 换种子重试
+                expert = ScriptedExpert(unwrapped, ecfg)
+                expert.reset(obs)
+                while True:
+                    action = expert.act(obs)
+                    obs, _, term, trunc, info = env.step_rad(action)
+                    max_z = max(max_z, float(info["pen_z"]))
+                    stage = cfg["stages"][min(expert.si, len(cfg["stages"]) - 1)]["name"]
+                    if term or trunc:
+                        break
+                n_used = attempt + 1
+                ok = bool(info["success"])
+                if ok:
                     break
-            ok = bool(info["success"])
+                if attempt + 1 < max(1, args.tries):
+                    obs, _ = env.reset(seed=1000 + i)  # 同一笔位复位重试
             results.append({"yaw": yaw_deg, "x": px, "y": py, "success": ok,
+                            "tries_used": n_used,
                             "hand": expert.side, "mode": expert.mode,
                             "stage": stage, "max_z": round(max_z, 4)})
             print(f"yaw={yaw_deg:+.0f} x={px:+.2f} y={py:+.2f} "
-                  f"{'SUC' if ok else 'FAIL'} hand={expert.side} m={expert.mode} "
+                  f"{'SUC' if ok else 'FAIL'} tries={n_used} hand={expert.side} m={expert.mode} "
                   f"stage={stage:8s} max_z={max_z:.3f}",
                   flush=True)
 
