@@ -23,7 +23,7 @@ from teleop.scripted_expert import ScriptedExpert, load_config  # noqa: E402
 
 
 def build_features(size, act_dim=54, obj_dim=13):
-    vid = {"dtype": "video", "shape": (size, size, 3), "names": None}
+    vid = {"dtype": "video", "shape": (size, size, 3), "names": ["height", "width", "channels"]}
     feats = {f"observation.images.{c}": dict(vid) for c in ("head", "left_wrist", "right_wrist")}
     feats["observation.state"] = {"dtype": "float32", "shape": (act_dim,), "names": None}
     feats["observation.object"] = {"dtype": "float32", "shape": (obj_dim,), "names": None}
