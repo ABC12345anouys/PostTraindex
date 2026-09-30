@@ -16,6 +16,11 @@ OUT=${OUT:-checkpoints/act_m2}
 BS=${BS:-8}
 
 RESUME_ARGS=""
+LATEST_CFG=$(ls $OUT/checkpoints/[0-9]*/pretrained_model/train_config.json 2>/dev/null | sort | tail -1)
+if [ -n "$LATEST_CFG" ]; then
+  RESUME_ARGS="--resume=true --config_path=$LATEST_CFG"
+  echo "resume from $LATEST_CFG"
+fi
 
 $PY -m lerobot.scripts.lerobot_train \
   --dataset.repo_id=local/bimanual_pen_train \
