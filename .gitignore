@@ -1,5 +1,13 @@
 __pycache__/
 *.pyc
 MUJOCO_LOG.TXT
-verify_out/
 data/
+checkpoints/
+verify_out/*
+!verify_out/*.json
+!verify_out/diag_*/
+!verify_out/expert_tune/
+verify_out/diag_*/*
+verify_out/expert_tune/*
+!verify_out/diag_*/montage.png
+!verify_out/expert_tune/montage.png
