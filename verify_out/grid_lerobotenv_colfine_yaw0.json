@@ -1,0 +1,46 @@
+[
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": -0.0375,
+  "success": false,
+  "tries_used": 3,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5079
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": -0.0125,
+  "success": false,
+  "tries_used": 3,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.6472
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": -0.0375,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.625
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": -0.0125,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6314
+ }
+]
