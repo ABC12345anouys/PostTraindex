@@ -187,7 +187,7 @@ stages:
   vertical: 0.16
   orientation: pen_axis_down
 grasp_modes:
-- 1
+- 1   # mode0/1 自动选优实测净负（settle 分数与抓取成败不相关）；重试机制覆盖多样性
 allowed_hands:
 - left
 - right
