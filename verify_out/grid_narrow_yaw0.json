@@ -1,0 +1,92 @@
+[
+ {
+  "yaw": 0.0,
+  "x": -0.05,
+  "y": -0.05,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5104
+ },
+ {
+  "yaw": 0.0,
+  "x": -0.05,
+  "y": 0.0,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "descend",
+  "max_z": 0.5133
+ },
+ {
+  "yaw": 0.0,
+  "x": -0.05,
+  "y": 0.05,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5106
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": -0.05,
+  "success": true,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.643
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": 0.0,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.6262
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": 0.05,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5079
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": -0.05,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.6389
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": 0.0,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5069
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": 0.05,
+  "success": false,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5058
+ }
+]
