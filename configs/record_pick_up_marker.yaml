@@ -1,0 +1,21 @@
+# g5 录数配置：LeRobot v3 数据集（跑在 lerobot-env，mujoco 3.7.0 物理与 M2/M3 评测一致）
+expert_cfg: configs/pick_up_marker.yaml   # 专家/环境配置复用
+total: 160            # 目标总条数（train+val 合计）
+val_ratio: 0.2        # 8:2 随机划分
+tries: 5              # 每条最多尝试次数（换 plan_seed 重试，取首次成功）
+max_z_sane: 0.75      # 笔最高 z 超过视为脏成功（被甩飞），丢弃重试
+fail_streak_stop: 30  # 连续 N 条全败（每条 tries 次全失败）则中止
+seed: 7
+yaw: 0.0
+episode_seconds: 12
+out_root: data
+train_name: bimanual_pen_train
+val_name: bimanual_pen_val
+fps: 20
+task: pick_up_marker
+# 初版候选点（colfine 细列，待 mujoco 3.7 物理重测绘后定稿）
+points:
+- [0.0, -0.0375]
+- [0.0, -0.0125]
+- [0.05, -0.0375]
+- [0.05, -0.0125]
