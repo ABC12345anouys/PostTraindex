@@ -34,8 +34,8 @@
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | M0 | 环境与双臂 MuJoCo 场景（Gymnasium 环境、3 相机、成功判定、verify 脚本） | ✅ 已完成（2026-09-28，`scripts/verify_env.py` 7/7 PASS，单步 24.5 ms） |
-| M1 | 三段式脚本示教 100–200 条 + LeRobot v3 数据集 | ⬜ |
-| M2 | ACT 模仿学习，闭环成功率 ≥40% | ⬜ |
+| M1 | 三段式脚本示教 100–200 条 + LeRobot v3 数据集 | ✅ 已完成（2026-09-30，160 条：train 130 / val 30，白名单好点 + 换 plan_seed 重试采集） |
+| M2 | ACT 模仿学习，闭环成功率 ≥40% | ✅ 已完成（2026-09-30，20k 步 loss 0.048；temporal ensemble 0.01 闭环：白名单 7/9=78%、rand20 12/20=60%） |
 | M3 | 冻结 ACT + 残差 TD3（zero-init tanh 头、稀疏终局奖励、critic warm-up），成功率 ≥90%，产出 success-vs-transitions 曲线 | ⬜ |
 | M4 | 可选 Phase-B：chunk-VAE codec + latent vs raw 残差对比 / Sim-DAgger / Transfer between Hands | ⬜ |
 
@@ -60,6 +60,21 @@ bimanual_dex_mvp/
 ```bash
 pip install "mujoco>=3.2" gymnasium
 python scripts/verify_env.py   # 环境自检（相机渲染 / 驱动开合 / 单步耗时）
+```
+
+> 主计划与进度/问题记录见仓库根目录 PLAN.md / PROGRESS.md。
+
+## 复现 M1→M2（lerobot-env，mujoco 3.7.0）
+
+```bash
+# 录数（白名单好点 + 重试，断点续录）
+MUJOCO_GL=egl python scripts/record_dataset.py --cfg configs/record_pick_up_marker.yaml
+# ACT 训练（自动 resume 最新 checkpoint 至目标步数）
+STEPS=20000 bash policy/act_lerobot/train.sh
+# 闭环评测（temporal ensemble 默认 0.01）
+MUJOCO_GL=egl python scripts/eval_act.py \
+  --ckpt checkpoints/act_m2/checkpoints/020000/pretrained_model \
+  --grid whitelist9 --tag act20k_wl9
 ```
 
 ## 偏离论文 / 原始 Menagerie 设定（登记备查）
