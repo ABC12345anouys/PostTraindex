@@ -61,9 +61,12 @@ def main():
     ds, n_have = {}, {}
     for split, nm in names.items():
         root = out_root / nm
-        d = LeRobotDataset.create(f"local/{nm}", fps=int(rc["fps"]),
-                                  features=build_features(size), root=root,
-                                  robot_type="bimanual_dex")
+        if (root / "meta").exists():
+            d = LeRobotDataset.resume(f"local/{nm}", root=root)  # lerobot_mod：续录必须用 resume
+        else:
+            d = LeRobotDataset.create(f"local/{nm}", fps=int(rc["fps"]),
+                                      features=build_features(size), root=root,
+                                      robot_type="bimanual_dex")
         ds[split] = d
         n_have[split] = int(d.meta.total_episodes)
     n0 = sum(n_have.values())
