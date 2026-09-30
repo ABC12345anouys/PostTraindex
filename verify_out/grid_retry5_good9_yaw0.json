@@ -1,0 +1,101 @@
+[
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": -0.05,
+  "success": true,
+  "tries_used": 3,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6399
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": -0.025,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6336
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.0,
+  "y": 0.0,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6443
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.025,
+  "y": -0.05,
+  "success": false,
+  "tries_used": 5,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5063
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.025,
+  "y": -0.025,
+  "success": false,
+  "tries_used": 5,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.5061
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.025,
+  "y": 0.0,
+  "success": false,
+  "tries_used": 5,
+  "hand": "right",
+  "mode": 1,
+  "stage": "hold",
+  "max_z": 0.6168
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": -0.05,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6375
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": -0.025,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6152
+ },
+ {
+  "yaw": 0.0,
+  "x": 0.05,
+  "y": 0.0,
+  "success": true,
+  "tries_used": 1,
+  "hand": "right",
+  "mode": 1,
+  "stage": "lift",
+  "max_z": 0.6307
+ }
+]
