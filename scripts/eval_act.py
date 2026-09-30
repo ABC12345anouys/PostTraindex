@@ -32,6 +32,8 @@ def main():
                     choices=["whitelist9", "narrow9", "rand20"])
     ap.add_argument("--tag", default="act_run")
     ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--ensemble", type=float, default=0.01,
+                    help="temporal ensemble 系数（ACT 原版 0.01，默认开；传 -1 关闭用 queue）")
     ap.add_argument("--n_actions", type=int, default=None,
                     help="覆盖 n_action_steps（queue 模式每 chunk 执行步数 C）")
     args = ap.parse_args()
@@ -41,6 +43,11 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     policy = ACTPolicy.from_pretrained(args.ckpt)
+    if args.ensemble >= 0:
+        from lerobot.policies.act.modeling_act import ACTTemporalEnsembler
+        policy.config.temporal_ensemble_coeff = args.ensemble
+        policy.temporal_ensembler = ACTTemporalEnsembler(
+            args.ensemble, policy.config.chunk_size)
     if args.n_actions is not None:
         policy.config.n_action_steps = args.n_actions
     policy.config.device = device
