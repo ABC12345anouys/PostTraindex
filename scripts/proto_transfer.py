@@ -59,6 +59,38 @@ def pen_axis(obs):
     return a / np.linalg.norm(a)
 
 
+def grasp_frame_safe(a, mode, tilt):
+    """_grasp_frame 的安全版：|a·UP|<0.7 时与原实现逐元素一致（保 seed4 口径）；
+    近垂直笔轴时原式 y_col=cross(-UP,a) 退化且 R 非正交（63.7° 残差根因），
+    换水平参考系构造正交基底。tilt 为 frame_tilt(rad)，绕 x（笔轴）施加。"""
+    s = np.array([a[1], -a[0], 0.0])
+    s = s / (np.linalg.norm(s) + 1e-9)
+    x_col = (a, -a, s, -s)[mode]
+    if abs(float(np.dot(a, _UP))) < 0.7:
+        y_col = np.cross(-_UP, x_col)
+        R0 = np.column_stack([x_col, y_col, -_UP])
+    else:
+        ref = np.array([1.0, 0.0, 0.0]) if abs(a[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+        y_col = np.cross(ref, x_col)
+        y_col = y_col / np.linalg.norm(y_col)
+        z_col = np.cross(x_col, y_col)
+        R0 = np.column_stack([x_col, y_col, z_col])
+    if tilt:
+        ct, st = np.cos(tilt), np.sin(tilt)
+        Rx = np.array([[1.0, 0.0, 0.0], [0.0, ct, -st], [0.0, st, ct]])
+        R0 = R0 @ Rx
+    return R0
+
+
+def rot_about(axis, ang):
+    """Rodrigues：绕单位轴 axis 转 ang 弧度的旋转矩阵。"""
+    axis = axis / (np.linalg.norm(axis) + 1e-12)
+    K = np.array([[0.0, -axis[2], axis[1]], [axis[2], 0.0, -axis[0]],
+                  [-axis[1], axis[0], 0.0]])
+    return np.eye(3) * np.cos(ang) + np.sin(ang) * K \
+        + (1.0 - np.cos(ang)) * np.outer(axis, axis)
+
+
 def hand_pen_contact(env, prefix):
     """prefix='lh'/'rh'：该手任一 geom 与笔接触。"""
     m, d = env.model, env.data
@@ -259,7 +291,8 @@ def tuck_solve(ik, seed, tpos, tR, elbow_tgt=ELBOW_BENT,
 
 def plan_left_goal(expert_l, ik_l, poses, C, R, hand_pose):
     """多起点 DLS + 静置补偿；末段强零空间屈肘，避免肘近伸直极限导致伺服奇异振荡。
-    标定期间关闭双臂/双手 geom 碰撞（跨臂互穿会炸仿真）。"""
+    标定期间关闭双臂/双手 geom 碰撞（跨臂互穿会炸仿真）；恢复调用前的掩码模式。"""
+    _prev_mask = _mask_mode
     set_collision_mask("self")
     try:
         q, _, _ = expert_l._solve_robust(ik_l, C, R)
@@ -276,7 +309,7 @@ def plan_left_goal(expert_l, ik_l, poses, C, R, hand_pose):
                 break
         return q, rp, ro
     finally:
-        set_collision_mask(None)
+        set_collision_mask(_prev_mask)
 
 
 def chain_at(qs, u):
@@ -303,12 +336,25 @@ def main():
     ap.add_argument("--seed", type=int, default=1002)  # wl9 协议：(0,0) 点=index2 → 1000+2
     ap.add_argument("--plan-seed", type=int, default=4)  # 已验证成功的 pick IK seed
     ap.add_argument("--out", default="verify_out/transfer_proto")
+    ap.add_argument("--no-normalize", action="store_true", help="关闭笔轴规范化")
+    ap.add_argument("--perturb-xy", type=float, default=0.0, help="抓持态笔心 xy 扰动幅值(m)")
+    ap.add_argument("--perturb-deg", type=float, default=0.0, help="抓持态笔轴扰动幅值(deg)")
+    ap.add_argument("--perturb-seed", type=int, default=0)
+    ap.add_argument("--perturb-settle", type=int, default=15, help="扰动后再静置帧数")
+    ap.add_argument("--nudge-deg", type=float, default=0.0, help="手腕刚性微旋幅值(deg)，绕笔心随机轴")
+    ap.add_argument("--nudge-trans", type=float, default=0.0, help="手腕刚性微移幅值(m)")
+    ap.add_argument("--nudge-seed", type=int, default=0)
+    ap.add_argument("--set", action="append", default=[],
+                    help="覆盖 transfer 段参数，如 --set handoff_along=-0.11")
     args = ap.parse_args()
 
     out = ROOT / args.out
     out.mkdir(parents=True, exist_ok=True)
     cfg = load_cfg(ROOT / args.cfg)
     tc = cfg["transfer"]
+    for kv in args.set:
+        k, v = kv.split("=", 1)
+        tc[k] = type(tc.get(k, 0.0))(float(v)) if not isinstance(tc.get(k), str) else v
     hz = float(cfg.get("control_hz", 20))
     poses = {k: np.asarray(v, dtype=np.float64) for k, v in cfg["hand_poses"].items()}
 
@@ -357,11 +403,15 @@ def main():
             # success/fell 只改奖励与终止标志，物理继续；原型刻意跑到 lift 末
             pass
     print(f"[pick] {pick_frames} 帧, grasped={info['grasped']} pen_z={info['pen_z']:.3f}")
+    pick_grasped = info["grasped"]
     apply_arm_damping(arm_damp)   # 交接前才开臂阻尼（保持原生 pick 抓取姿态）
 
     # 右手 lift 末关节/手指状态（9 维臂腕 + 18 手指）
     r_q9 = unwrapped.data.qpos[expert_r.ik.qadr].copy()
-    r_f18 = poses["pinch3"][2:20].copy()
+    # 握力加固（问题 38）：pinch3 是边际握持，扰动后笔在 carry 途中重力 pivot 下垂；
+    # 沿 pre_pinch→pinch3 合拢方向外推 tighten 比例提高法向力（位置 actuator 超程加压）。
+    _tighten = float(tc.get("grip_tighten", 0.0))
+    r_f18 = (poses["pinch3"] + _tighten * (poses["pinch3"] - poses["pre_pinch"]))[2:20].copy()
     # 左手初始（home 张开）
     cfg_l = copy.deepcopy(cfg)
     cfg_l["allowed_hands"] = ["left"]
@@ -377,6 +427,133 @@ def main():
         obs, _, _, _, _ = env.step_rad(blend_action(l_q9, l_f18, r_q9, r_f18))
     print(f"[settle] {n_settle}帧 pen={np.asarray(obs['object'][:3]).round(3)} "
           f"axis={pen_axis(obs).round(3)} pen_z={env._pen_lowest_z():.3f}")
+    obs_pre = obs
+
+    # ---------- 抓持态扰动：笔在右手中注入小位姿噪声（录数多样性来源，问题 35） ----------
+    perturb_info = {"xy": float(args.perturb_xy), "deg": float(args.perturb_deg),
+                    "seed": int(args.perturb_seed), "ran": False}
+    if args.perturb_xy > 0.0 or args.perturb_deg > 0.0:
+        prng = np.random.default_rng(args.perturb_seed)
+        dxy = prng.uniform(-args.perturb_xy, args.perturb_xy, 2)
+        dax = np.radians(prng.uniform(-args.perturb_deg, args.perturb_deg, 2))
+        dd = unwrapped.data
+        dd.qpos[0] += dxy[0]
+        dd.qpos[1] += dxy[1]
+        q = dd.qpos[3:7].copy()
+        for _ax, _an in ((np.array([1.0, 0.0, 0.0]), dax[0]),
+                         (np.array([0.0, 1.0, 0.0]), dax[1])):
+            _c, _s = np.cos(_an / 2), np.sin(_an / 2)
+            _dq = np.array([_c, _ax[0] * _s, _ax[1] * _s, _ax[2] * _s])
+            q = unwrapped._quat_mul(_dq, q)
+        dd.qpos[3:7] = q
+        dd.qvel[0:6] = 0.0
+        mujoco.mj_forward(unwrapped.model, dd)
+        for _ in range(int(args.perturb_settle)):
+            obs, _, _, _, _ = env.step_rad(blend_action(l_q9, l_f18, r_q9, r_f18))
+        perturb_info.update({"ran": True, "dxy": dxy.round(5).tolist(),
+                             "ddeg": np.degrees(dax).round(3).tolist()})
+        print(f"[perturb] dxy={dxy.round(4)} ddeg={np.degrees(dax).round(2)} "
+              f"pen={np.asarray(obs['object'][:3]).round(3)} axis={pen_axis(obs).round(3)} "
+              f"pen_z={env._pen_lowest_z():.3f}")
+        obs_pre = obs
+
+    # ---------- 手腕刚性 nudge：整手带笔做小旋转/平移（形闭包内部相对位姿不变，问题 39） ----------
+    # 与 teleport 扰动（改笔相对手的位姿→破坏接触构型→carry 重力 pivot 下垂，问题 35）
+    # 的根本区别：nudge 只改"手+笔"整体在世界系中的位姿，抓持接触完全保留。
+    nudge_info = {"deg": float(args.nudge_deg), "trans": float(args.nudge_trans),
+                  "seed": int(args.nudge_seed), "ran": False}
+    if args.nudge_deg > 0.0 or args.nudge_trans > 0.0:
+        nrng = np.random.default_rng(args.nudge_seed)
+        _ax = nrng.normal(size=3)
+        _ax = _ax / np.linalg.norm(_ax)
+        _ang = np.radians(nrng.uniform(-args.nudge_deg, args.nudge_deg))
+        _tr = nrng.uniform(-args.nudge_trans, args.nudge_trans, 3)
+        R_d = rot_about(_ax, _ang)
+        pc_n = np.asarray(obs["object"][:3], dtype=np.float64)
+        p_s0, R_s0 = _fk_site(expert_r.ik, r_q9)
+        p_ng = pc_n + R_d @ (p_s0 - pc_n) + _tr
+        R_ng = R_d @ R_s0
+        q_ng, ep_ng, _ = expert_r._solve_from(expert_r.ik, r_q9, p_ng, R_ng, iters=80)
+        print(f"[nudge] ang={np.degrees(_ang):.2f}° tr={(_tr*1000).round(1)}mm "
+              f"IK 残差 pos={ep_ng*100:.2f}cm")
+        if ep_ng < 0.02:
+            nq = build_cartesian_chain(expert_r, expert_r.ik, r_q9, q_ng, n_points=8, arch=0.0)
+            for k in range(15):
+                u = _min_jerk(k / 15.0)
+                obs, _, _, _, _ = env.step_rad(blend_action(l_q9, l_f18, chain_at(nq, u), r_f18))
+            for _ in range(5):
+                obs, _, _, _, _ = env.step_rad(blend_action(l_q9, l_f18, q_ng, r_f18))
+            r_q9 = q_ng
+            nudge_info.update({"ran": True, "ang_deg": round(float(np.degrees(_ang)), 3),
+                               "trans_mm": (_tr * 1000).round(2).tolist()})
+            print(f"[nudge] 完成 pen={np.asarray(obs['object'][:3]).round(3)} "
+                  f"axis={pen_axis(obs).round(3)} pen_z={env._pen_lowest_z():.3f}")
+            obs_pre = obs
+        else:
+            print("[nudge] IK 残差过大，跳过")
+
+    # ---------- 笔轴规范化：在右手中用腕自由度把笔转到标准朝向 ----------
+    # 不同 pick plan_seed 的笔轴 a 差异大，handoff 会合点完全由 a 决定（问题 29）：
+    # 闭环迭代把笔绕笔心最小旋转到标准轴 a_star（每步限幅 normalize_max_step_deg，
+    # 大步旋转会在 pinch3 握持中打滑/甩飞），后续规划基于规范化后的实测位姿。
+    a_star = np.asarray(tc.get("normalize_axis", [0.903, -0.224, -0.366]), dtype=np.float64)
+    a_star = a_star / np.linalg.norm(a_star)
+    norm_info = {"axis_star": a_star.round(4).tolist(), "ran": False, "iters": 0}
+    a0 = pen_axis(obs)
+    norm_info["axis_before"] = a0.round(4).tolist()
+    norm_info["angle_before_deg"] = round(float(np.degrees(
+        np.arccos(np.clip(np.dot(a0, a_star), -1.0, 1.0)))), 2)
+    if bool(tc.get("normalize_enable", True)) and not args.no_normalize:
+        _min_deg = float(tc.get("normalize_min_deg", 3.0))
+        _max_step = float(tc.get("normalize_max_step_deg", 30.0))
+        _max_iter = int(tc.get("normalize_max_iter", 4))
+        n_norm = int(round(float(tc.get("normalize_seconds", 2.0)) * hz))
+        n_set = int(tc.get("normalize_settle", 10))
+        for _it in range(_max_iter):
+            a0 = pen_axis(obs)
+            ang0 = float(np.degrees(np.arccos(np.clip(np.dot(a0, a_star), -1.0, 1.0))))
+            # 笔已落桌（近垂直弱握会持续下滑，转不动）则停止
+            if ang0 < _min_deg or np.asarray(obs["object"][:3])[2] < 0.55:
+                break
+            v = np.cross(a0, a_star)
+            if np.linalg.norm(v) < 1e-9:
+                break
+            v = v / np.linalg.norm(v)
+            th = np.radians(min(ang0, _max_step))
+            K = np.array([[0.0, -v[2], v[1]], [v[2], 0.0, -v[0]], [-v[1], v[0], 0.0]])
+            R_d = np.eye(3) + np.sin(th) * K + (1.0 - np.cos(th)) * (K @ K)
+            p_pen0 = np.asarray(obs["object"][:3], dtype=np.float64)
+            p_site0, R_site0 = _fk_site(expert_r.ik, r_q9)
+            p_tgt = p_pen0 + R_d @ (p_site0 - p_pen0)
+            R_tgt = R_d @ R_site0
+            q_norm, ep_n, eo_n = expert_r._solve_from(expert_r.ik, r_q9, p_tgt, R_tgt)
+            print(f"[normalize] it{_it} 轴偏 {ang0:.1f}° 步进 {np.degrees(th):.1f}° "
+                  f"IK 残差 pos={ep_n*100:.1f}cm ori={np.degrees(eo_n):.1f}°")
+            if ep_n >= 0.03:
+                print("[normalize] IK 残差过大，停止规范化")
+                break
+            norm_q = build_cartesian_chain(
+                expert_r, expert_r.ik, r_q9, q_norm,
+                n_points=int(tc.get("normalize_chain_points", 16)),
+                arch=float(tc.get("normalize_arch", 0.0)))
+            for k in range(n_norm):
+                u = _min_jerk(k / max(n_norm, 1))
+                obs, _, _, _, info = env.step_rad(blend_action(
+                    l_q9, l_f18, chain_at(norm_q, u), r_f18))
+            for _ in range(n_set):
+                obs, _, _, _, info = env.step_rad(blend_action(
+                    l_q9, l_f18, q_norm, r_f18))
+            r_q9 = q_norm
+            norm_info["ran"] = True
+            norm_info["iters"] = _it + 1
+    a1 = pen_axis(obs)
+    ang1 = float(np.degrees(np.arccos(np.clip(np.dot(a1, a_star), -1.0, 1.0))))
+    norm_info["axis_after"] = a1.round(4).tolist()
+    norm_info["angle_after_deg"] = round(ang1, 2)
+    print(f"[normalize] ran={norm_info['ran']} iters={norm_info['iters']} "
+          f"轴偏 {norm_info['angle_before_deg']:.1f}°→{ang1:.1f}° "
+          f"pen={np.asarray(obs['object'][:3]).round(3)} rh={hand_pen_contact(unwrapped,'rh')}")
+    Image.fromarray(obs["images"]["head"]).save(out / "normalize.png")
 
     # ---------- 交接几何规划 ----------
     pick_pen = np.asarray(obs["object"][:3], dtype=np.float64)
@@ -386,7 +563,9 @@ def main():
     # handoff 会合笔位（右手先把笔搬过来），笔轴方向近似不变（只平移）
     pen_pos = (pick_pen + a * float(tc["handoff_along"])
                + _UP * float(tc["handoff_vertical"]))
-    R_r = expert_r._grasp_frame(a, expert_r.mode)[0]
+    # carry 目标朝向用 grasp_frame 理想系（非 FK 实际系）：左承接 R_l 同出 grasp_frame(a)，
+    # 拖腕修正可让会合点实际笔姿态对齐左手规划假设；FK 纯平移实测 catch 抓不上（已证伪）
+    R_r = grasp_frame_safe(a, expert_r.mode, expert_r.frame_tilts.get("right", 0.0))
     q_handoff, ep_h, eo_h = expert_r._solve_from(expert_r.ik, r_q9, pen_pos, R_r)
     print(f"[plan] handoff C={pen_pos.round(3)} R: pos={ep_h*100:.1f}cm ori={np.degrees(eo_h):.1f}°")
     # carry 右手链：沿笛卡尔路径 warm-start 滚动 IK（抛物线抬臂防甩笔）
@@ -406,19 +585,36 @@ def main():
     expert_l.ik = ik_l
     expert_l.off = 0
     expert_l.mode = int(tc["left_mode"])
-    R_l, _ = expert_l._grasp_frame(a, expert_l.mode)
     C_l = (pen_pos + a * float(tc["along"]) + s * float(tc["lateral"])
            + _UP * float(tc["vertical"])
            + _UP * float(tc.get("left_goal_dz", 0.0)))   # 左承接位 z 微调（补偿右 site-笔中心几何偏移）
+    # 圆柱笔绕轴 1-DoF 冗余：网格搜索绕轴扭转角 φ，取左臂 IK 残差最小的抓握朝向
+    # （近垂直笔轴下默认 frame 常落在左腕/肘不可达区，问题 29/30 根因之一）
+    R_l0 = grasp_frame_safe(a, expert_l.mode, expert_l.frame_tilts.get("left", 0.0))
+    # 默认优先、奇异才搜索：φ=0 粗朝向残差超阈值才在 ±range 窗口内找可达扭转，
+    # 避免搜到"左手包抄右手"的几何（右手无法撤离，已实测失败）
+    _, _ep0, _eo0 = expert_l._solve_from(ik_l, l_q9, C_l, R_l0, iters=200)
+    R_l = R_l0
+    if np.degrees(_eo0) > float(tc.get("left_twist_trigger_deg", 25.0)):
+        n_tw = int(tc.get("left_twist_search", 12))
+        _tw_rng = np.radians(float(tc.get("left_twist_range_deg", 90.0)))
+        tw_best = None
+        for phi in np.linspace(-_tw_rng, _tw_rng, n_tw):
+            R_phi = rot_about(a, phi) @ R_l0
+            _, _ep, _eo = expert_l._solve_from(ik_l, l_q9, C_l, R_phi, iters=200)
+            _sc = _ep + 0.02 * _eo
+            if tw_best is None or _sc < tw_best[0]:
+                tw_best = (_sc, phi, R_phi, _ep, _eo)
+        if tw_best[4] < _eo0:
+            R_l = tw_best[2]
+            print(f"[plan] left twist 触发(φ0 ori={np.degrees(_eo0):.1f}°) "
+                  f"φ*={np.degrees(tw_best[1]):.0f}° 粗残差 ori={np.degrees(tw_best[4]):.1f}°")
     # 承接臂目标按 catch 末【执行手型 pinch3】静置标定：
     # lh_grasp_site 挂在拇指基座上，手型不同 site 世界位漂移可达 7cm，
     # 必须按最终握持手型补偿（与 pick 专家 descend 同原则）
-    l_goal, lp, lo = plan_left_goal(expert_l, ik_l, poses, C_l, R_l, tc["catch_hand"])
-    print(f"[plan] left gather C={C_l.round(3)} R_tilt 残差 pos={lp*100:.1f}cm ori={np.degrees(lo):.1f}°")
 
     # 左手等待/预抓位：沿笔轴在承接位靠左手侧(-a)外 approach_dist 处，朝向与最终
-    # 抓握 R_l 一致；catch 沿 +a 直线套入（笔杆滑进 pinch 开口），避免侧方横切时
-    # 掌骨/小指先撞落笔。该位在笔自由端之外，右手 carry 全程不与其干涉。
+    # 抓握 R_l 一致；该位在笔自由端之外，右手 carry 全程不与其干涉。
     _appr = float(tc.get("axis_approach", 0.13))
     C_ret = C_l - a * _appr
     q_retreat, rp_ret, ro_ret = expert_l._solve_from(ik_l, l_q9, C_ret, R_l)
@@ -429,164 +625,214 @@ def main():
                                       n_points=int(tc.get("retreat_chain_points", 16)),
                                       arch=float(tc.get("retreat_arch", 0.12)))
 
-    # gather 关节链：沿笛卡尔路径 warm-start 滚动 IK（防关节直线穿越奇异甩臂）
-    n_pts = int(tc.get("gather_chain_points", 24))
-    arch = float(tc.get("gather_arch", 0.10))
-    via_q = build_cartesian_chain(expert_l, ik_l, q_retreat, l_goal,
-                                  n_points=n_pts, arch=arch)
-
-    # 右手撤离目标：从 handoff 位 site 沿 +笔轴（右手基座侧）平移
-    C_rel = p_handoff_site + a * float(tc["release_along"])
-    R_r = R_r
-    q_rel, rp_rel, ro_rel = expert_r._solve_from(expert_r.ik, r_q9, C_rel, R_r)
-    print(f"[plan] right release C={C_rel.round(3)} 残差 pos={rp_rel*100:.1f}cm ori={np.degrees(ro_rel):.1f}°")
-
-    # transfer 动作段：禁跨侧身体互碰（左手指碰右臂炸仿真，软组织近似）
-    set_collision_mask("cross")
-
-
-    # ---------- 四阶段 ----------
+    # ---------- handoff 时间表（右手 carry 送笔 + 左手撤到沿轴预抓位）----------
     f_pre = poses[tc["gather_hand"]][2:20]
     f_catch = poses[tc["catch_hand"]][2:20]
     f_open_r = poses[tc["release_hand"]][2:20]
 
-    # ---- 双手协同交接逐帧时间表（右手动态搬笔，左手先撤再平接，同时到位）----
     T = int(round(float(tc.get("handoff_seconds", 2.5)) * hz))
-    t_ret = float(tc.get("t_retreat_done", 0.30))    # 左手撤到 retreat 的归一化时刻
-    t_carry = float(tc.get("t_carry_done", 0.55))    # 右手送笔到位后静止持笔
+    t_ret = float(tc.get("t_retreat_done", 0.30))
+    t_carry = float(tc.get("t_carry_done", 0.55))
     TL_q, TL_f, TR_q, TR_f = [], [], [], []
     for k in range(T):
-        t = k / max(T - 1, 1)
-        TR_q.append(chain_at(carry_q, _min_jerk(min(1.0, t / t_carry))))
+        tt = k / max(T - 1, 1)
+        TR_q.append(chain_at(carry_q, _min_jerk(min(1.0, tt / t_carry))))
         TR_f.append(r_f18.copy())
-        if t < t_ret:                                  # 0→retreat（侧下方避让），手 open
-            u = _min_jerk(t / t_ret)
-            TL_q.append(chain_at(retreat_q, u))
-            TL_f.append(f_pre.copy())
-        else:                                          # 停在侧下方 retreat 等待，catch 再插入
+        if tt < t_ret:
+            TL_q.append(chain_at(retreat_q, _min_jerk(tt / t_ret)))
+        else:
             TL_q.append(q_retreat.copy())
-            TL_f.append(f_pre.copy())
+        TL_f.append(f_pre.copy())
     print(f"[plan] 串行时间表 T={T}帧 t_ret={t_ret} t_carry={t_carry}")
 
-    _ng = len(via_q)
-    _fi = float(tc.get("catch_close_start", 0.6))
-    catch_fchain = []
-    for _i in range(_ng):
-        _v = _i / max(_ng - 1, 1)
-        _w = 0.0 if _v < _fi else min(1.0, (_v - _fi) / (1.0 - _fi))
-        catch_fchain.append((1 - _w) * f_pre + _w * f_catch)
+    # transfer 动作段：禁跨侧身体互碰（左手指碰右臂炸仿真，软组织近似）
+    set_collision_mask("cross")
 
-    phases = [
-        # handoff：逐帧时间表驱动双臂
-        ("handoff", float(T) / hz,
-         (l_q9.copy(), l_f18.copy()), (l_goal.copy(), f_pre),
-         (r_q9.copy(), r_f18.copy()), (q_handoff.copy(), r_f18.copy()),
-         ("timed", TL_q, TL_f, TR_q, TR_f)),
-        # catch（串行）：右手静止持笔，左手从侧下方沿链插入并 open→pinch3 共持
-        ("catch", float(tc["catch_seconds"]),
-         (q_retreat.copy(), f_pre), (l_goal.copy(), f_catch),
-         (carry_q[-1].copy(), r_f18.copy()), (carry_q[-1].copy(), r_f18.copy()),
-         ("chain_l", via_q, catch_fchain, None, None)),
-        # release：右手松开并沿笔轴撤离，左手保持握持
-        ("release", float(tc["release_seconds"]),
-         (l_goal.copy(), f_catch), (l_goal.copy(), f_catch),
-         (q_handoff.copy(), r_f18.copy()), (q_rel.copy(), f_open_r), None),
-        # hold：左手独握保持
-        ("hold", float(tc["hold_seconds"]),
-         (l_goal.copy(), f_catch), (l_goal.copy(), f_catch),
-         (q_rel.copy(), f_open_r), (q_rel.copy(), f_open_r), None),
-    ]
-
-    result = {"pick_frames": pick_frames, "phases": [], "success": False}
+    result = {"pick_frames": pick_frames, "phases": [], "success": False,
+              "normalize": norm_info,
+              "pick_grasped": bool(pick_grasped),
+              "settle_axis": np.asarray(pen_axis(obs_pre)).round(4).tolist(),
+        "perturb": perturb_info,
+        "nudge": nudge_info}
     hold_need = int(tc["hold_frames"])
     hold_cnt = 0
     cur_l = (l_q9, l_f18)
     cur_r = (r_q9, r_f18)
-    for name, sec, l0, l1, r0, r1, extra in phases:
-        n = max(1, int(round(sec * hz)))
-        l0q, l0f = l0; l1q, l1f = l1
-        r0q, r0f = r0; r1q, r1f = r1
-        phase_info = {"name": name, "frames": n}
-        kind = extra[0] if extra else None
-        qchain = extra[1] if extra else None
-        fchain = extra[2] if extra else None
-        # carry 到位后右臂只需静止持笔：q_handoff 构型在阻尼10下为慢不稳定
-        # （静止>~0.7s 发散），catch 起把右臂阻尼加大，左臂保持低值以便侧插。
-        if name == "catch":
-            _hd = float(tc.get("hold_arm_damping", 10.0))
-            for _ji in range(1, 8):
-                _jid = mujoco.mj_name2id(unwrapped.model, mujoco.mjtObj.mjOBJ_JOINT,
-                                         f"r_joint{_ji}")
-                unwrapped.model.dof_damping[unwrapped.model.jnt_dofadr[_jid]] = _hd
-        k_abs = 0
-        for k in range(n):
-            u = _min_jerk(k / max(n, 1))
-            if kind == "timed":
-                cur_l = (extra[1][k], extra[2][k])
-                cur_r = (extra[3][k], extra[4][k])
-            elif kind == "chain_l":
-                cur_l = (chain_at(qchain, u), chain_at(fchain, u))
-                cur_r = ((1 - u) * r0q + u * r1q, (1 - u) * r0f + u * r1f)
-            elif kind == "chain_r":
-                cur_r = (chain_at(qchain, u), chain_at(fchain, u))
-                cur_l = ((1 - u) * l0q + u * l1q, (1 - u) * l0f + u * l1f)
-            elif kind == "chain_both":
-                cur_r = (chain_at(qchain, u), chain_at(fchain, u))
-                lqc, lfc = extra[3], extra[4]
-                cur_l = (chain_at(lqc, u), chain_at(lfc, u))
-            else:
-                cur_l = ((1 - u) * l0q + u * l1q, (1 - u) * l0f + u * l1f)
-                cur_r = ((1 - u) * r0q + u * r1q, (1 - u) * r0f + u * r1f)
-            obs, _, _, _, info = env.step_rad(blend_action(cur_l[0], cur_l[1],
-                                                           cur_r[0], cur_r[1]))
-            if k % 10 == 0 or k == n - 1:
-                dd2 = unwrapped.data
-                sp = dd2.site(ik_l.site_id).xpos
-                xtra = ""
-                if k == n - 1:
-                    pp = [ ]
-                    for ci in range(dd2.ncon):
-                        cc = dd2.contact[ci]
-                        c1 = mujoco.mj_id2name(unwrapped.model, mujoco.mjtObj.mjOBJ_BODY,
-                                               int(unwrapped.model.geom(cc.geom1).bodyid)) or "?"
-                        c2 = mujoco.mj_id2name(unwrapped.model, mujoco.mjtObj.mjOBJ_BODY,
-                                               int(unwrapped.model.geom(cc.geom2).bodyid)) or "?"
-                        pp.append(f"{c1}-{c2}")
-                    xtra = f" pairs={sorted(set(pp))}"
-                print(f"  {name[:2]}{k:2d} z={info['pen_z']:.3f} lh={hand_pen_contact(unwrapped,'lh')} "
-                      f"rh={hand_pen_contact(unwrapped,'rh')} lsite={np.round(sp,3).tolist()}{xtra}")
-            if name == "hold":
-                lh = hand_pen_contact(unwrapped, "lh")
-                rh = hand_pen_contact(unwrapped, "rh")
-                lifted = unwrapped._pen_lowest_z() > TABLE_TOP_Z + unwrapped.cfg.lift_clearance
-                stable = np.linalg.norm(unwrapped.data.qvel[0:3]) < unwrapped.cfg.max_lin_vel
-                ok = lh and not rh and lifted and stable
-                hold_cnt = hold_cnt + 1 if ok else 0
-                if k == n - 1:
-                    phase_info.update(lh=lh, rh=rh, lifted=bool(lifted),
-                                      stable=bool(stable), hold=hold_cnt)
-            k_abs += 1
-        # catch 末：左手指尖到笔轴线/笔心的距离诊断
-        if name == "catch":
-            md, dd = unwrapped.model, unwrapped.data
-            pc = dd.body(unwrapped._pen_body).xpos
-            qa = quat_to_R(np.asarray(dd.body(unwrapped._pen_body).xquat)) @ np.array([0.,0.,1.])
-            qa /= np.linalg.norm(qa)
-            for nm in ("lh_ffdistal","lh_mfdistal","lh_thdistal","rh_ffdistal"):
-                bid = mujoco.mj_name2id(md, mujoco.mjtObj.mjOBJ_BODY, nm)
-                fp = dd.body(bid).xpos
-                t = np.clip(np.dot(pc - fp, qa), -0.075, 0.075)
-                closest = fp + qa * t
-                d_ax = np.linalg.norm(closest - pc)
-                print(f"    {nm}: 轴垂距={d_ax*100:.1f}cm 端距={np.linalg.norm(fp-pc)*100:.1f}cm")
-        # 阶段末 head 相机截图
-        img = obs["images"]["head"]
-        Image.fromarray(img).save(out / f"{name}.png")
-        pen_z = float(unwrapped.data.body(unwrapped._pen_body).xpos[2])
-        phase_info["pen_z_end"] = round(pen_z, 3)
-        result["phases"].append(phase_info)
-        print(f"[{name}] {n}帧 pen_z={pen_z:.3f} "
-              f"lh={hand_pen_contact(unwrapped,'lh')} rh={hand_pen_contact(unwrapped,'rh')}")
+
+    def run_phases(phases):
+        nonlocal obs, hold_cnt, cur_l, cur_r
+        for name, sec, l0, l1, r0, r1, extra in phases:
+            n = max(1, int(round(sec * hz)))
+            l0q, l0f = l0; l1q, l1f = l1
+            r0q, r0f = r0; r1q, r1f = r1
+            phase_info = {"name": name, "frames": n}
+            kind = extra[0] if extra else None
+            qchain = extra[1] if extra else None
+            fchain = extra[2] if extra else None
+            if name == "catch":
+                _hd = float(tc.get("hold_arm_damping", 10.0))
+                for _ji in range(1, 8):
+                    _jid = mujoco.mj_name2id(unwrapped.model, mujoco.mjtObj.mjOBJ_JOINT,
+                                             f"r_joint{_ji}")
+                    unwrapped.model.dof_damping[unwrapped.model.jnt_dofadr[_jid]] = _hd
+            for k in range(n):
+                u = _min_jerk(k / max(n, 1))
+                if kind == "timed":
+                    cur_l = (extra[1][k], extra[2][k])
+                    cur_r = (extra[3][k], extra[4][k])
+                elif kind == "chain_l":
+                    cur_l = (chain_at(qchain, u), chain_at(fchain, u))
+                    cur_r = ((1 - u) * r0q + u * r1q, (1 - u) * r0f + u * r1f)
+                elif kind == "track_l":
+                    # 闭环承接：每帧按实测笔心重解左臂 IK（朝向固定标称 R_l）。
+                    # 前 track_approach_frac 段目标点从起始 site 按 min-jerk 混入
+                    # （无剖面直接跟踪=首帧瞬移 13cm 撞笔，已证伪），之后纯跟踪；
+                    # 笔从右手滑落即变成移动目标，左手跟随接住而非开环撞笔。
+                    R_lt, f0t, f1t, cst = extra[1], extra[2], extra[3], extra[4]
+                    if k == 0:
+                        p_start_l = _fk_site(ik_l, cur_l[0])[0]
+                    pc = np.asarray(obs["object"][:3], dtype=np.float64)
+                    p_pen = pc + _UP * float(tc.get("left_goal_dz", 0.0))
+                    vv = k / max(n - 1, 1)
+                    ta = float(tc.get("track_approach_frac", 0.5))
+                    mj = _min_jerk(min(1.0, vv / ta))
+                    tgt_p = (1 - mj) * p_start_l + mj * p_pen
+                    # 朝向跟踪（问题 36）：标称凹口对抓持态扰动零容差（±1mm 即顶飞），
+                    # 每帧按实测轴重建承接 frame（叠加规划时可达性扭转偏置 φ*）。
+                    # 大轴偏（>10°）实测系左腕不可达——该模式只服务小扰动包络。
+                    if str(tc.get("track_orient", "nominal")) == "meas":
+                        a_m = pen_axis(obs)
+                        R_use = rot_about(a_m, twist_phi) @ grasp_frame_safe(
+                            a_m, expert_l.mode, expert_l.frame_tilts.get("left", 0.0))
+                    else:
+                        R_use = R_lt
+                    q_new, ep_t, _ = expert_l._solve_from(ik_l, cur_l[0], tgt_p, R_use, iters=80)
+                    if ep_t < 0.04:
+                        dq = q_new - cur_l[0]
+                        mxd = float(tc.get("track_max_dq", 0.12))
+                        nrm = np.abs(dq).max()
+                        lq = cur_l[0] + dq * (mxd / nrm) if nrm > mxd else q_new
+                    else:
+                        lq = cur_l[0]
+                    ww = 0.0 if vv < cst else min(1.0, (vv - cst) / (1.0 - cst))
+                    cur_l = (lq, (1 - ww) * f0t + ww * f1t)
+                    cur_r = ((1 - u) * r0q + u * r1q, (1 - u) * r0f + u * r1f)
+                elif kind == "chain_r":
+                    cur_r = (chain_at(qchain, u), chain_at(fchain, u))
+                    cur_l = ((1 - u) * l0q + u * l1q, (1 - u) * l0f + u * l1f)
+                else:
+                    cur_l = ((1 - u) * l0q + u * l1q, (1 - u) * l0f + u * l1f)
+                    cur_r = ((1 - u) * r0q + u * r1q, (1 - u) * r0f + u * r1f)
+                obs, _, _, _, info = env.step_rad(blend_action(cur_l[0], cur_l[1],
+                                                               cur_r[0], cur_r[1]))
+                if k % 10 == 0 or k == n - 1:
+                    dd2 = unwrapped.data
+                    sp = dd2.site(ik_l.site_id).xpos
+                    xtra = ""
+                    if k == n - 1:
+                        pp = []
+                        for ci in range(dd2.ncon):
+                            cc = dd2.contact[ci]
+                            c1 = mujoco.mj_id2name(unwrapped.model, mujoco.mjtObj.mjOBJ_BODY,
+                                                   int(unwrapped.model.geom(cc.geom1).bodyid)) or "?"
+                            c2 = mujoco.mj_id2name(unwrapped.model, mujoco.mjtObj.mjOBJ_BODY,
+                                                   int(unwrapped.model.geom(cc.geom2).bodyid)) or "?"
+                            pp.append(f"{c1}-{c2}")
+                        xtra = f" pairs={sorted(set(pp))}"
+                    print(f"  {name[:2]}{k:2d} z={info['pen_z']:.3f} lh={hand_pen_contact(unwrapped,'lh')} "
+                          f"rh={hand_pen_contact(unwrapped,'rh')} lsite={np.round(sp,3).tolist()}{xtra}")
+                if name == "hold":
+                    lh = hand_pen_contact(unwrapped, "lh")
+                    rh = hand_pen_contact(unwrapped, "rh")
+                    lifted = unwrapped._pen_lowest_z() > TABLE_TOP_Z + unwrapped.cfg.lift_clearance
+                    stable = np.linalg.norm(unwrapped.data.qvel[0:3]) < unwrapped.cfg.max_lin_vel
+                    ok = lh and not rh and lifted and stable
+                    hold_cnt = hold_cnt + 1 if ok else 0
+                    if k == n - 1:
+                        phase_info.update(lh=lh, rh=rh, lifted=bool(lifted),
+                                          stable=bool(stable), hold=hold_cnt)
+            if name == "catch":
+                md, dd = unwrapped.model, unwrapped.data
+                pc = dd.body(unwrapped._pen_body).xpos
+                qa = quat_to_R(np.asarray(dd.body(unwrapped._pen_body).xquat)) @ np.array([0., 0., 1.])
+                qa /= np.linalg.norm(qa)
+                for nm in ("lh_ffdistal", "lh_mfdistal", "lh_thdistal", "rh_ffdistal"):
+                    bid = mujoco.mj_name2id(md, mujoco.mjtObj.mjOBJ_BODY, nm)
+                    fp = dd.body(bid).xpos
+                    tv = np.clip(np.dot(pc - fp, qa), -0.075, 0.075)
+                    closest = fp + qa * tv
+                    d_ax = np.linalg.norm(closest - pc)
+                    print(f"    {nm}: 轴垂距={d_ax*100:.1f}cm 端距={np.linalg.norm(fp-pc)*100:.1f}cm")
+            Image.fromarray(obs["images"]["head"]).save(out / f"{name}.png")
+            pen_z = float(unwrapped.data.body(unwrapped._pen_body).xpos[2])
+            phase_info["pen_z_end"] = round(pen_z, 3)
+            result["phases"].append(phase_info)
+            print(f"[{name}] {n}帧 pen_z={pen_z:.3f} "
+                  f"lh={hand_pen_contact(unwrapped,'lh')} rh={hand_pen_contact(unwrapped,'rh')}")
+
+    twist_phi = 0.0   # replan 扭转搜索的可达性偏置（track_orient=meas 时叠加）
+
+    # ---- 执行 handoff（左手按标称轴撤到沿轴预抓位，右手送笔）----
+    run_phases([("handoff", float(T) / hz,
+                 (l_q9.copy(), l_f18.copy()), (q_retreat.copy(), f_pre),
+                 (r_q9.copy(), r_f18.copy()), (q_handoff.copy(), r_f18.copy()),
+                 ("timed", TL_q, TL_f, TR_q, TR_f))])
+
+    # ---------- handoff 后按【实测位置 + 标称轴朝向】在线重规划 ----------
+    # 朝向规划仍用 carry 前标称轴 a（成功机制是左手按浅轴形成承接凹口，笔从右手
+    # 滑落入凹口自动对正；carry 后实测轴偏陡 30°+ 时左腕不可达，已证伪）；
+    # 位置用实测值（消除 carry 落点漂移导致的走廊错位撞笔）。
+    a_meas = pen_axis(obs)
+    pen_pos2 = np.asarray(obs["object"][:3], dtype=np.float64)
+    l_now = unwrapped.data.qpos[ik_l.qadr].copy()
+    r_now = unwrapped.data.qpos[expert_r.ik.qadr].copy()
+    print(f"[replan] 实测 pen={pen_pos2.round(3)} axis_meas={a_meas.round(3)} 规划轴={a.round(3)}")
+    C_l = (pen_pos2 + a * float(tc["along"]) + s * float(tc["lateral"])
+           + _UP * float(tc["vertical"])
+           + _UP * float(tc.get("left_goal_dz", 0.0)))
+    R_l0 = grasp_frame_safe(a, expert_l.mode, expert_l.frame_tilts.get("left", 0.0))
+    _, _ep0, _eo0 = expert_l._solve_from(ik_l, l_now, C_l, R_l0, iters=200)
+    R_l = R_l0
+    if np.degrees(_eo0) > float(tc.get("left_twist_trigger_deg", 25.0)):
+        n_tw = int(tc.get("left_twist_search", 12))
+        _tw_rng = np.radians(float(tc.get("left_twist_range_deg", 90.0)))
+        tw_best = None
+        for phi in np.linspace(-_tw_rng, _tw_rng, n_tw):
+            R_phi = rot_about(a, phi) @ R_l0
+            _, _ep, _eo = expert_l._solve_from(ik_l, l_now, C_l, R_phi, iters=200)
+            _sc = _ep + 0.02 * _eo
+            if tw_best is None or _sc < tw_best[0]:
+                tw_best = (_sc, phi, R_phi, _ep, _eo)
+        if tw_best[4] < _eo0:
+            R_l = tw_best[2]
+            twist_phi = float(tw_best[1])
+            print(f"[replan] left twist 触发 φ*={np.degrees(tw_best[1]):.0f}° "
+                  f"粗残差 ori={np.degrees(tw_best[4]):.1f}°")
+    # 右手撤离：从当前实际 site 沿标称 +笔轴 平移
+    p_site_now, _ = _fk_site(expert_r.ik, r_now)
+    C_rel = p_site_now + a * float(tc["release_along"])
+    q_rel, rp_rel, ro_rel = expert_r._solve_from(expert_r.ik, r_now, C_rel, R_r)
+    print(f"[replan] right release C={C_rel.round(3)} 残差 pos={rp_rel*100:.1f}cm ori={np.degrees(ro_rel):.1f}°")
+
+    # ---- catch（闭环跟踪）/ release / hold ----
+    # 右手静止目标必须用规划链末点 carry_q[-1] 而非实测 r_now：笔是靠"伺服仍在向
+    # 链末收敛"的残余压力握住的，冻结实测值会卸压掉笔（已实测 ca10 内掉落）。
+    run_phases([
+        ("catch", float(tc["catch_seconds"]),
+         (l_now.copy(), f_pre), (l_now.copy(), f_catch),
+         (carry_q[-1].copy(), r_f18.copy()), (carry_q[-1].copy(), r_f18.copy()),
+         ("track_l", R_l, f_pre, f_catch, float(tc.get("catch_close_start", 0.6)))),
+    ])
+    l_end = unwrapped.data.qpos[ik_l.qadr].copy()
+    f_end = cur_l[1]
+    run_phases([
+        ("release", float(tc["release_seconds"]),
+         (l_end.copy(), f_end.copy()), (l_end.copy(), f_end.copy()),
+         (carry_q[-1].copy(), r_f18.copy()), (q_rel.copy(), f_open_r), None),
+        ("hold", float(tc["hold_seconds"]),
+         (l_end.copy(), f_end.copy()), (l_end.copy(), f_end.copy()),
+         (q_rel.copy(), f_open_r), (q_rel.copy(), f_open_r), None),
+    ])
 
     result["success"] = hold_cnt >= hold_need
     (out / "result.json").write_text(json.dumps(result, ensure_ascii=False, indent=1))

@@ -32,6 +32,18 @@ transfer:
   settle_frames: 25      # pick 后持笔静置帧数（等笔姿态在阻尼下收敛）
   arm_damping: 10.0      # pick 后给 7 个臂关节加阻尼(N·m·s/rad)，配合 qfrc_bias 重力前馈抑制极限环
   hold_arm_damping: 10.0 # catch 起右臂阻尼（静止持笔；实验证实阶跃发散与阻尼无关，取与 arm_damping 同值）
+  # ---- 笔轴规范化（carry 前在右手中用腕自由度转到标准轴，问题 29 跨姿态鲁棒）----
+  normalize_enable: false # 承接凹口按标称轴规划即可容忍实测轴偏；弱握下腕旋转甩飞笔（已实测）
+  normalize_axis: [0.903, -0.224, -0.366] # 标准笔轴（seed4 成功朝向）
+  normalize_min_deg: 3.0   # 实测轴与标准轴夹角小于该值则停止
+  normalize_max_step_deg: 20.0 # 单步旋转限幅（大步会在 pinch3 握持中打滑/甩飞）
+  normalize_max_iter: 4    # 闭环迭代上限（每步后重测实际笔轴）
+  normalize_seconds: 2.0
+  normalize_chain_points: 16
+  normalize_arch: 0.0
+  normalize_settle: 10
+  # ---- 左手承接朝向绕笔轴扭转搜索（圆柱冗余，避开左腕/肘不可达区）----
+  left_twist_search: 12
   # ---- handoff（右手 carry + 左手撤退时间表，min-jerk）----
   handoff_seconds: 2.5
   t_retreat_done: 0.30   # 左手在该归一化时刻撤到沿轴预抓位，随后静止等待
@@ -46,6 +58,7 @@ transfer:
   gather_chain_points: 32
   gather_hand: pre_pinch # 撤退/套入过程手型（拇指先勾位、食中指张开形成入口）
   # ---- catch（左手套入合拢，右手静止共持）----
+  track_orient: nominal # nominal=标称轴凹口(零扰动口径)；meas=每帧实测轴重建凹口(抓持态扰动包络)
   catch_seconds: 2.5
   catch_close_start: 0.6 # 套入前 60% 保持 pre_pinch，末 40% 合拢到 catch_hand
   catch_hand: pinch3
