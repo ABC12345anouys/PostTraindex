@@ -15,3 +15,13 @@ verify_out/expert_tune/*
 verify_out/transfer_proto/*
 !verify_out/transfer_proto/*.png
 !verify_out/transfer_proto/result.json
+!verify_out/scan_pick/
+verify_out/scan_pick/*
+!verify_out/scan_pick/scan_pick.png
+!verify_out/transfer_pool/
+verify_out/transfer_pool/*
+!verify_out/transfer_pool/pool_matrix.png
+!verify_out/transfer_pool2/
+verify_out/transfer_pool2/*
+!verify_out/transfer_pool2/pool_matrix.png
+!verify_out/transfer_dataset_qc.png

@@ -224,3 +224,40 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
 - 扫描器设计：单进程循环（point × plan_seed），pick+settle 探针 ~40s/个，浅轴
   （|Δaxis|<10°，pen_z>0.6）才跑全程；handoff 末轴漂移 >20° 提前 kill。
 - 目标：40-60 条互异成功 episode（pose × 参数组合；同组合重复=逐比特相同，无效）。
+
+## M4 n4：自然 pick 变体扫描 → 浅轴池 → 录数（执行中）
+
+### 问题 40：扫描器 pick 前清零 dof_damping → 锚点口径崩坏（假阴性整批）
+- 扫描器为"保 M1 pick 接触姿态"在 pick 前 set_damping(0)，结果 (0,0) ps=4 settle 轴从
+  a_star 掉到 60.8°/pen_low_z 0.497。根因：XML 默认 joint damping=1，proto_transfer
+  pick 段一直跑在默认阻尼上；"清零"才是改物理。
+- 修复：env 创建时存 damp0，每组合 pick 前恢复默认、pick 后才开 arm_damping=10
+  （与 proto 逐帧一致）。修复后锚点轴偏 0.0° 逐比特复现。
+- 教训（与问题 32 同族）：**任何初始化侧改动必须先过锚点回归**
+  （(0,0) seed1002 plan4 → settle 轴偏≈0°）再批量跑。
+
+### 扫描结果（25 点环 × ps0-9，250 组合，3.7.0）
+- pick 成功 132/250；浅轴候选（|Δaxis|<10° 且 pen_low_z>0.6）12 个，ps∈{0,2,4,9}，
+  覆盖中心到 ±12mm 环 10 个点。产物：verify_out/scan_pick/scan_poses.json + scan_pick.png。
+
+### 池 round1（12 候选 × def/dz05/cs05）→ 仅 5/36 成功
+- 成功：锚点 (0,0)ps4 ×3 + (-4,+7mm)ps2 ×2（def/cs05）。
+- 关键发现（推翻"settle 浅轴即充分"）：**成功条 carry 漂移也 ~33°**
+  （settle [0.903,-0.224,-0.366]→handoff 末 [0.532,-0.488,-0.692]，两个成功候选落到
+  同一稳定平衡轴）；失败候选中不乏 settle 轴偏 1.6° 者。
+  成败判别 = 漂移是否落到同一平衡轴 + 承接凹口毫米级几何（问题 34 机制的包络）。
+- 失败分类（31 条）：carry 途中掉笔(ha)3、catch 撞飞/滑落(ca/re)14、hold 不达标 14；
+  其中 28 条 carry 漂移>20° 但这不是判据（成功条 33°），只是相关现象。
+- 对策（round2 并行中）：参数池扩 9 组（±dz03/06、cs04/07、along±0.01）+
+  plan_seed 10-19 扩展扫描补候选。
+
+### 池 round2/3 与录数完成（n4 收官）
+- 参数池扩 9 组（def/dz03/05/06/cs04/05/07/am01/ap01）后：round2 13/108（ps0-9 候选），
+  round3（ps10-19 新候选 12 个）28/108——**ps19/ps11 抓握族 transfer 亲和性显著更高**。
+- 合并成功池 **41 互异组合**：8 桌面点 × ps{2,4,11,19} × 9 参数（verify_out/transfer_success_pool.json）。
+- 录数（record_transfer.py，STEP_HOOK 单点注入 run_phases；episode=reset+pick 不录，
+  settle 后起录 handoff/catch/release/hold，只收 hold 成功条）：**41/41 一次全过**
+  （池验证口径逐比特复现，train=33/val=8，每条 156 帧）。
+  产物：data/bimanual_transfer_{train,val} + data/transfer_dataset_qc.png。
+- 踩坑：LeRobotDataset.resume 需 HF_HUB_OFFLINE=1（否则连 hub）；val 零条空壳 meta 不全
+  （缺 tasks.parquet），resume 前须检测重建（已固化在 make_datasets）。

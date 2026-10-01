@@ -327,6 +327,15 @@ def blend_action(l_q9, l_f18, r_q9, r_f18):
                            r_q9[:7], r_q9[7:9], r_f18]).astype(np.float64)
 
 
+STEP_HOOK = None   # 录数钩子 fn(obs_before, action54)，step 前触发（仅 run_phases 注入）
+
+
+def _rec_step(env, action, obs_before):
+    if STEP_HOOK is not None:
+        STEP_HOOK(obs_before, action)
+    return env.step_rad(action)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cfg", default="configs/transfer_marker.yaml")
@@ -723,8 +732,8 @@ def main():
                 else:
                     cur_l = ((1 - u) * l0q + u * l1q, (1 - u) * l0f + u * l1f)
                     cur_r = ((1 - u) * r0q + u * r1q, (1 - u) * r0f + u * r1f)
-                obs, _, _, _, info = env.step_rad(blend_action(cur_l[0], cur_l[1],
-                                                               cur_r[0], cur_r[1]))
+                _act = blend_action(cur_l[0], cur_l[1], cur_r[0], cur_r[1])
+                obs, _, _, _, info = _rec_step(env, _act, obs)
                 if k % 10 == 0 or k == n - 1:
                     dd2 = unwrapped.data
                     sp = dd2.site(ik_l.site_id).xpos

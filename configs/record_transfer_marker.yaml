@@ -1,0 +1,12 @@
+# M4 n4 transfer 录数配置：LeRobot v3 数据集（lerobot-env，mujoco 3.7.0 物理）
+# episode = 标称 reset+pick（不录）→ settle 后起录 handoff/catch/release/hold，只收 hold 成功条
+pool: verify_out/transfer_success_pool.json  # 互异成功组合（run_shallow.py 产出）
+total: 60               # 目标总条数上限（实际 = min(total, 池大小)，每组合恰 1 条）
+val_every: 5            # 每 val_every 条全局序号末位进 val（8:2 确定划分，断点续录安全）
+out_root: data
+train_name: bimanual_transfer_train
+val_name: bimanual_transfer_val
+fps: 20
+task: transfer_marker
+manifest: data/transfer_record_manifest.json
+debug_root: verify_out/transfer_record   # 每条 episode 的阶段仿真截图/result.json
