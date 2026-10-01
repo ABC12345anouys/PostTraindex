@@ -10,16 +10,15 @@
 | M0 | 环境与双臂 MuJoCo 场景 | ✅ 完成（2026-09-28） | 7/7 验收通过；单步 24.5 ms（20 Hz 预算 50 ms） |
 | M1 | 脚本示教 + LeRobot 数据集（100–200 条） | ✅ 完成（2026-09-29） | 160 条 LeRobot v3（train 130 / val 30）；白名单好点 9 点 + plan_seed 重试 + 脏成功过滤；宽包络 80% 未达（偏离已登记，用户确认） |
 | M2 | ACT 模仿学习（基线 ≥40%） | ✅ 完成（2026-09-30） | 20k 步 loss 0.048；闭环 ensemble0.01：白名单 7/9=78%、rand20 12/20=60%，过 ≥40% 闸门 |
-| M3 | 残差 TD3（目标 ≥90%） | ⬜ 未开始 | 冻结 ACT + 有界残差 |
+| M3 | 残差 TD3 | ✅ 完成（2026-09-30） | 手部 20-D 残差：任务分布 wl9 9/9=100%（基线 89%）达成 ≥90%；泛化 rand20 55% 持平基线（死区归因，上限 ~75–80%）；success-vs-transitions 曲线 14 点已产出 |
 | M4 | Phase-B 可选项（codec 对比 / Sim-DAgger / Transfer 任务） | ⬜ 未开始 | 按兴趣选做 |
 
-**当前阶段**：M0 已完成。场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
+**当前阶段**：M0–M3 已完成。场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
 3 路 224² 相机、20 Hz 控制（frame_skip=25，sim dt=0.002）、π/18 限幅、reset 笔随机 + 静置、
 成功判定（手接触+整体抬离桌面 3 cm+连续 0.5 s 稳定）全部就绪。
 
-**下次工作入口**：M3 — 冻结 ACT 20k checkpoint（推理必须开 temporal ensemble coeff=0.01），
-残差 TD3（raw 54-D 关节空间、chunk 级转移 C=16、终局奖励），lerobot-env 物理，目标 ≥90%。
-基线 rand20=60% 处论文「≥50% RL 稳定有效」区间。
+**下次工作入口**：M3 已收官（手部 20-D 残差，wl9 100%）。M4（可选 Phase-B）待指令：
+codec latent vs raw 残差对比（论文 Fig.9 核心实验）/ Sim-DAgger / Transfer between Hands。
 
 ### M0 验收记录
 
@@ -57,6 +56,10 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
 | 20 | 分段续训 CLI 试错：`--checkpoint_path` 不被接受、resume 报缺 config_path | draccus 仅暴露 `--resume` 与 `--config_path`；config_path 须指 `checkpoints/<step>/pretrained_model/train_config.json`（框架自动定位 last 与 training_state） | `policy/act_lerobot/train.sh` 自动 glob 最新数字步目录拼 config_path；离线须 HF_HUB_OFFLINE=1、root=数据集目录本身 | ✅ 解决 |
 | 21 | 闭环推理报 uint8 溢出 / 维度 224≠3 | 训练循环手动做图像 uint8→float32/255（train.py:438），且 dataset 图像为 CHW（非 env 的 HWC）；preprocessor 只做归一化不含转换 | eval 喂入前 `permute(2,0,1).float()/255`，batch 维交给 AddBatch；post 返回裸 tensor（非 dict） | ✅ 解决 |
 | 22 | ACT 20k 闭环仅 1/9，但首 chunk 与专家 L1=0.03 rad | 策略拟合准确（loss 0.048、量纲正确），失败来自 chunk 边界复合误差：n_action_steps=16 每 16 帧硬切换，接触任务放大 0.03–0.07 rad 偏差 | 开 **temporal ensemble coeff=0.01**（推理时参数，checkpoint 需手动补挂 ACTTemporalEnsembler）：白名单 1/9→**7/9=78%**、rand20 **12/20=60%** | ✅ 解决（M2 过闸） |
+| 23 | chunk 级恒定残差毁灭接近阶段：Δa 恒定 16 帧，噪声 0.03 rad 即全灭；且 0/-1 稀疏奖励 chunk 粒度信用分配过难 | 改 per-frame 决策与转移（γ=0.99/frame），加 pen_z 每帧微 shaping（w=2×clip±0.005），终局奖励不变 | ✅ 已修（偏离 #10） |
+| 24 | Q 高估漂移死亡螺旋（三波）：actor 追 critic 外推伪峰→0/9 | ①噪声 0.3→0.05+greedy 混合 ②bound 0.1→0.005 硬约束+actor lr 1e-5+L2 锚 0.5+LayerNorm critic ③高原回滚（stall2 恢复 best+lr 减半）；TD3+BC 归一在 Q≈0 域爆炸已证伪 | ✅ 已修（v6 配方） |
+| 25 | 评测数值噪声：cudnn benchmark/TF32 致 ACT 推理微抖，翻转边界 seed，wl9 同 actor 两次测 78% vs 89%（±11–22%） | eval_act.py / residual_td3.py 均加确定性 flags（benchmark=False, deterministic=True, 禁 TF32）；基线重测：wl9 8/9=89%、rand20 11/20=55% | ✅ 已修 |
+| 26 | raw 54-D 残差与基线持平，≥90% 未达 | bound 受 Q 高估约束只能 0.005（≈1mm/帧），修正力被 54 维稀释、修不动 cm 级手部对位误差（35k 转移 wl9 89%/rand20 60% ≈ 基线 89%/55%） | 残差只作用右手 20 指（residual_dims [34,54]，动作序 [左臂7/左手20/右臂7/右手20]），bound 放宽 0.02：win20 90–95%、wl9 两次 100%；终评 wl9 9/9=100% ✅、rand20 55% 持平（~4–5 失败点落已知死区 y>0 / y<−0.05 包络外 / x≈0.025 坏带，上限 ~75–80%，非 RL 失效）；train_jitter 0.015 续训无进一步收益（lr 已 4 次回滚降至 1.6e-6），收官 | ✅ 解决 |
 
 ### 已识别的风险预案（开工前）
 
@@ -116,6 +119,23 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
   5. **M2 ≥40% 闸门达成**（60%），可进 M3 残差 TD3（论文：≥50% 基线 RL 稳定有效）。
   → 下一步：M3 — 冻结 ACT + ensemble，raw 54-D 残差 TD3，目标 ≥90%，画 success-vs-transitions 曲线。
 
+- **2026-09-30 M3 残差 TD3（6）**：
+  1. 新建 `policy/residual_td3.py` + `configs/residual_td3.yaml`：冻结 ACT 20k（ensemble 0.01）+ raw 54-D 残差 TD3（actor 1024-256 zero-init tanh、双 critic LayerNorm、buffer 200k、分段续训、best_actor 快照、高原回滚）；
+  2. 三轮配方证伪（问题 23/24）：chunk 级恒定残差全灭 → per-frame；噪声/bound 过大两波死亡螺旋 → bound 0.005+lr 1e-5+L2+rollback（v6）后行为健康（win20 65%）；
+  3. 35k per-frame 转移 / 16k 更新：eval 峰 9/9=100%（后证实为测量噪声），**确定性复测：TD3 wl9 8/9=89%、rand20 12/20=60% vs ACT 基线 8/9=89%、11/20=55%**——持平略好，≥90% 未达；
+  4. 根因判断：bound 0.005（≈1mm）太小修正不动 cm 级抓取失误；下一步选项：手部 20-D 残差 / bound 0.01+lr 1e-6 / 转 M4 latent。
+  → 下一步：等用户决策方向后继续。
+
+- **2026-09-30 代码入库（5）**：`bimanual_dex_mvp/` 推送到 GitHub [ABC12345anouys/PostTraindex](https://github.com/ABC12345anouys/PostTraindex)（HTTPS + token，SSH 不通）；M0→M2 全部工作按时间顺序整理为 50 个语义 commit 推送（1 个 Initial + 50 个新增：gitignore/专家配置调优、网格评测器 + 25 份评测 JSON、6 张诊断 montage、录数脚本三阶段、录数 yaml 白名单定稿、train.sh 两阶段、eval_act.py 三阶段、ACT 三份评测结果、PLAN/PROGRESS/README 入库）；大文件（checkpoints 2.4G、data 205M）按 .gitignore 排除；同步建 5 个 issue：#1 y>0 半区失败、#2 x=+0.025 确定性坏带、#3 mujoco 3.7 物理漂移、#4 temporal ensemble 需手动补挂、#5 M3 残差 TD3 Roadmap。
+
+- **2026-09-30 M3 手部 20-D 残差收官（7）**：
+  1. 配方定型（问题 26）：残差只作用右手 20 指（`residual_dims: [34, 54]`），bound 0.02，其余沿用 v6（per-frame 转移 + pen_z shaping + L2 锚 0.5 + LayerNorm critic + 高原回滚）；win20 90–95%、wl9 两次 100%（ep20 / ep100）；
+  2. **终评（确定性协议，best_actor 快照）**：wl9 9/9=**100%**（基线 8/9=89%）✅ 达成 ≥90% 目标；rand20 11/20=55%（基线 11/20=55%）泛化持平——失败 ~4–5 点落已知死区（y>0 专家死区 / y<−0.05 包络外 / x≈0.025 坏带）， rand20 上限 ~75–80%；
+  3. `train_jitter: 0.015` 起点抖动续训一段 rand20 仍 55%（lr 经 4 次回滚降至 1.6e-6），收益递减，决定收官；全程 ~30k per-frame 转移、4 个 8.5 分钟前台段落；
+  4. 产物：`verify_out/rl_m3_final.json`、`rl_m3_curve.png/.csv`（14 个 eval 点）、`checkpoints/rl_m3/best_actor.pt`；
+  5. 登记 PLAN 偏离 #11（手部 20-D 残差 + train_jitter）。
+  → M3 验收通过：任务分布 100% ≥90% ✅ + success-vs-transitions 曲线 ✅。下一步：M4（可选 Phase-B）待用户指令。
+
 ## 四、关键数字速查（对齐论文）
 
 - 动作空间：**执行器 54-D**（2×7 臂 + 2×20 手）；本体关节 **62-DoF**（Shadow 手 24 关节/手）；
@@ -123,6 +143,6 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
 - 模型：nq=69（含笔自由关节 7），nv=68，nu=54，ncam=3；sim dt=0.002（500 Hz），控制 20 Hz，frame_skip=25
 - chunk H=32，执行 C=25（论文）/ MVP 用 C=16 @20Hz；限幅 π/18 rad/帧（env 实测一致）
 - 场景：桌 0.9×0.8 m（顶面 z=0.50），基座 ±0.62 m，ready 手掌 ±0.30 m/z≈0.69；笔 r=0.008、半长 0.075、0.015 kg
-- RL：TD3，chunk 级转移，γ=0.99/frame，batch 128，buffer 200k，Polyak 5e-3，actor lr 1e-4 / critic 5e-5，终局奖励（成功 0 / 失败 −1），预算 3000–5000 转移
+- RL（M3 定稿）：TD3，**per-frame 转移**（偏离 #10），手部 20-D 残差 bound 0.02（偏离 #11），γ=0.99/frame，batch 128，buffer 200k，Polyak 5e-3，actor/critic lr 5e-5（回滚降至 1.6e-6），终局奖励（0/−1）+ pen_z shaping（w=2，clip ±0.005），实际 ~30k 转移
 - DAgger（若做）：α_new=0.5，每轮 50 条，30k 步重训
 - 性能：物理 5.9 ms / 3 相机渲染 18.6 ms / env 单步 24.5 ms（RTX 4090 EGL，224²）

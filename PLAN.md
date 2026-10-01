@@ -76,18 +76,18 @@ MVP 只复现**骨架**：codec/SFT/DAgger/RL 四步 → 简化为 **ACT 模仿�
 - [x] 仿真闭环评测（mujoco 3.7.0 同物理）：**rand20 12/20=60%**、白名单 9 点 7/9=78%（开 temporal ensemble 0.01；关闭时仅 1/9——chunk 边界复合误差）
 - [x] 失败归因：首 chunk 与专家 L1 0.03 rad（拟合充分），失败均来自 chunk 边界 + 接触刀尖窗口；ensemble 后残余失败与专家同 seed 失败点重合
 
-### M3：残差 RL（第 3–5 周）——论文 Step 4 的复现
+### M3：残差 RL（第 3–5 周）——论文 Step 4 的复现 ✅ 已完成（2026-09-30）
 
-- [ ] 冻结 ACT 为 π_ref；每 chunk 推理一次（与 M2 相同节奏）
-- [ ] TD3 残差（对齐论文式 14–21 的简化版）：
-  - actor：MLP(1024-256)，输入 (q, 物体位姿, a_ref_chunk)，zero-init tanh 头，输出有界 Δa（54 维，bc 缩放）
-  - critic ×2：(s, a_ref+Δa) → Q；chunk 级转移（每转移 = C=16 帧），per-frame γ=0.99
-  - 奖励：仅终局（成功 0 / 失败 -1），仿真自动标注；可加 shaping（高度/接触辅助，加速收敛，属偏离论文的提速项，需消融记录）
-  - 安全：Δa 限幅 + 关节变化率限制 + latent/关节限位 clamp
-  - 探索：actuator 空间高斯噪声（σ 分离臂/手）
-  - 每 episode 后 200 梯度步，buffer 200k，critic warm-up 后开 actor
-- [ ] 预算：3000–5000 在线转移（仿真便宜，可比论文多跑）
-- [ ] 验收：成功率从 M2 基线提升到 ≥90%；画出 success-vs-transitions 曲线（对应论文 Fig.9）
+- [x] 冻结 ACT 为 π_ref（20k checkpoint + temporal ensemble 0.01 手动补挂）；per-frame 决策（chunk 级恒定残差证伪，偏离 #10）
+- [x] TD3 残差（对齐论文式 14–21 的简化版；`policy/residual_td3.py` + `configs/residual_td3.yaml`）：
+  - actor：MLP(1024-256)，输入（54-D 状态 + 13-D 笔位姿），zero-init tanh 头，输出有界 Δa；**最终只作用右手 20 指**（bound 0.02；raw 54-D 持平证伪，偏离 #11）
+  - critic ×2（LayerNorm 抑 Q 高估）：(s, a_ref+Δa) → Q；per-frame 转移，γ=0.99/frame
+  - 奖励：终局（成功 0 / 失败 −1）+ pen_z 每帧微 shaping（w=2×clip±0.005，偏离 #10），仿真自动标注
+  - 安全：Δa bound 硬限幅（tanh×bound）+ env π/18 帧限幅；高原回滚（stall2 恢复 best_actor + lr 减半）
+  - 探索：高斯噪声（σ=0.5×bound）+ 50% 纯贪心采集 + train_jitter 0.015 起点抖动
+  - 每 episode 后 100 梯度步，buffer 200k，critic warm-up 500 转移后开 actor
+- [x] 预算：实际 ~30k per-frame 转移（4 个 8.5 分钟前台段落，ckpt+buffer 断点续训）
+- [x] 验收：任务分布 wl9 9/9=**100%**（基线 89%）✅ ≥90%；泛化 rand20 55% 持平基线（死区点归因，上限 ~75–80%）；success-vs-transitions 曲线 `verify_out/rl_m3_curve.png`（14 eval 点）
 
 ### M4（可选 Phase-B，按兴趣选做）
 
@@ -128,7 +128,7 @@ bimanual_dex_mvp/
 
 1. MuJoCo 双臂灵巧场景可复现论文观测/动作接口（3 相机 + 54-D 状态 + 54-D 动作）；
 2. ACT 在 Pick Up Marker 上从仿真示教收敛，闭环成功率 ≥40%；
-3. 冻结 ACT + 残差 TD3 后成功率 ≥90%，并给出 success-vs-online-transitions 曲线；
+3. 冻结 ACT + 残差 TD3 后成功率 ≥90%，并给出 success-vs-online-transitions 曲线（**M3 达成**：任务分布 wl9 100% vs 基线 89%，曲线 14 点）；
 4. 全流程代码与数据格式（LeRobot v3）规范，可一键复跑。
 
 
@@ -145,6 +145,8 @@ bimanual_dex_mvp/
 7. home 姿态 q2/q4 抬高 0.25rad 使手离桌（M0 ready 位姿的调整）。
 8. **全链物理统一 mujoco 3.7.0**：录数/M2 评测/M3 RL 交互均在 lerobot-env（lerobot_mod 0.5.2 + mujoco 3.7.0）；专家标定与历史数字基于 3.5.0，3.7 下接触动力学漂移致好区重排，白名单在 3.7 下重测绘。
 9. **M1 专家验收口径**：宽包络成功率 ≥80% 未达（3.5 下 narrow9@重试5 为 5/9，3.7 下 3/9）；改「好点白名单（3.7 实测 9 点）+ plan_seed≤5 重试 + 甩飞脏成功过滤」采集，策略泛化范围=白名单邻域（用户确认）。
+10. **M3 RL 转移粒度改 per-frame + 奖励 shaping**：论文/原计划为 chunk 级转移 C=16；实测恒定 16 帧残差偏移对接近阶段毁灭性（噪声 0.03 rad 全灭），且 0/-1 稀疏终局奖励在 chunk 粒度信用分配过难，actor 两次死于 Q 高估漂移（0/9）。改为 per-frame 决策与转移（γ=0.99/frame 不变）、加 pen_z 每帧微 shaping（w=2×clip±0.005），终局奖励 成功 0/失败 -1 不变。
+11. **M3 残差只作用右手 20 指**（`residual_dims: [34, 54]`，动作序 [左臂7/左手20/右臂7/右手20]）：原计划 raw 54-D 全维残差；实测 54-D 下 bound 受 Q 高估约束只能 0.005（≈1mm/帧），修正不动 cm 级手部对位误差，35k 转移与基线持平。改手部 20-D 后 bound 放宽至 0.02，wl9 100%。另加 `train_jitter: 0.015`（采集起点抖动，泛化探索用，rand20 收益已饱和仍 55%）。
 
 ## 8. 参考资料
 
