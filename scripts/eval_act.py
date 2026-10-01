@@ -38,6 +38,11 @@ def main():
                     help="覆盖 n_action_steps（queue 模式每 chunk 执行步数 C）")
     args = ap.parse_args()
 
+    # 评测可复现：关 cudnn benchmark/TF32（数值抖动会翻转边界 seed）
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
     from lerobot.policies import make_pre_post_processors
     from lerobot.policies.act.modeling_act import ACTPolicy
 
