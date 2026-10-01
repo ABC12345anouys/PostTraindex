@@ -1,0 +1,58 @@
+# M4 Transfer between Hands（右手抓笔 → 沿笔轴交接给左手）原型配置
+# 复用 pick_up_marker.yaml 的 ik/wrist/frame_tilt/hand_poses（base 打底，本文件覆盖/追加）
+#
+# 串行交接四阶段（均 20Hz）：
+#   handoff : 右手把笔从 pick 位 carry 到会合点并静止持笔；左手先撤到笔自由端外的
+#             沿轴预抓位等待（不与右手/笔干涉）
+#   catch   : 左手保持最终抓握朝向 R_l，沿笔轴 +a 直线套入（笔杆滑进 pre_pinch 张开的
+#             拇指-食/中指凹口，末段合拢到 pinch3），形成双手共持
+#   release : 右手 open 并沿笔轴撤离，载荷转移到左手
+#   hold    : 左手 pinch3 独握保持（连续 hold_frames 帧判定成功）
+#
+# 已验证协议：reset (0,0) yaw0 seed1002 + 右手 pick plan_seed=4 → 确定性成功（16/10 帧）。
+# 已知局限：handoff 会合点随 pick 后笔轴朝向 a 变化（pen_pos = pick_pen + a*handoff_along），
+#   不同 pick plan_seed 的 a 差异大，会把会合点带到左臂肘奇异区（seed2）或桌沿（seed3）。
+#   跨姿态鲁棒需在 carry 前先把笔在右手中规范化到标准朝向（下一阶段）。
+base_cfg: configs/pick_up_marker.yaml
+task: transfer_marker
+control_hz: 20
+allowed_hands:
+- right
+transfer:
+  # ---- handoff 会合点（右手送笔目标，沿 pick 后笔轴 a 偏移）----
+  handoff_along: -0.13
+  handoff_vertical: 0.02
+  # ---- 左手承接位（左 pinch3 抓笔点）----
+  left_mode: 0
+  along: 0.0
+  lateral: 0.0
+  vertical: 0.0
+  left_goal_dz: 0.04     # 承接 site 抬高(m)：lh_grasp_site 挂 thbase，补偿其与笔中心几何偏移
+  # ---- pick 后静置 / 臂阻尼 ----
+  settle_frames: 25      # pick 后持笔静置帧数（等笔姿态在阻尼下收敛）
+  arm_damping: 10.0      # pick 后给 7 个臂关节加阻尼(N·m·s/rad)，配合 qfrc_bias 重力前馈抑制极限环
+  hold_arm_damping: 10.0 # catch 起右臂阻尼（静止持笔；实验证实阶跃发散与阻尼无关，取与 arm_damping 同值）
+  # ---- handoff（右手 carry + 左手撤退时间表，min-jerk）----
+  handoff_seconds: 2.5
+  t_retreat_done: 0.30   # 左手在该归一化时刻撤到沿轴预抓位，随后静止等待
+  t_carry_done: 0.80     # 右手在该归一化时刻送笔到位，随后静止持笔
+  carry_arch: 0.10       # carry 笛卡尔抛物线抬臂高度(m)，防水平甩笔
+  carry_chain_points: 24
+  # ---- 左手沿轴预抓/套入 ----
+  axis_approach: 0.13    # 预抓位在承接位沿 -a 方向的距离(m)，即从笔自由端外套入行程
+  retreat_arch: 0.0      # 预抓位本就在高位安全区，直线撤入不抬臂
+  retreat_chain_points: 16
+  gather_arch: 0.0       # 预抓位→承接位沿笔轴直线套入，不抬臂
+  gather_chain_points: 32
+  gather_hand: pre_pinch # 撤退/套入过程手型（拇指先勾位、食中指张开形成入口）
+  # ---- catch（左手套入合拢，右手静止共持）----
+  catch_seconds: 2.5
+  catch_close_start: 0.6 # 套入前 60% 保持 pre_pinch，末 40% 合拢到 catch_hand
+  catch_hand: pinch3
+  # ---- release / hold ----
+  release_seconds: 2.0
+  release_hand: open
+  release_along: 0.10    # 右手沿笔轴撤离距离(m)
+  hold_seconds: 0.8
+  hold_frames: 10
+  plan_restarts: 6
