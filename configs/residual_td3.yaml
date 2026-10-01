@@ -1,0 +1,49 @@
+# M3 残差 TD3：冻结 ACT（推理必开 temporal ensemble）+ raw 54-D 关节空间残差
+# 跑在 lerobot-env（mujoco 3.7.0，与录数/M2 评测同物理，PLAN 偏离清单 #8）
+act_ckpt: checkpoints/act_m2/checkpoints/020000/pretrained_model
+ensemble: 0.01            # temporal ensemble 系数（-1 关闭；M2 结论：不开则 chunk 边界复合误差 1/9）
+out_dir: checkpoints/rl_m3
+seed: 42
+
+# 交互（per-frame 决策与转移 @20Hz；chunk 级 C=16 恒定偏移实测毁灭接近阶段，登记偏离）
+episode_seconds: 12
+shape_w: 2.0              # 每帧 shaping：w×clip(Δpen_z,±shape_clip)（稀疏终局信用分配过难的修正，登记偏离）
+shape_clip: 0.005
+residual_bound: 0.02      # |Δa| 上限 rad（手指关节 0.02≈毫米级指尖修正；小探索面下不易毁）
+residual_dims: [34, 54]   # 残差只作用右手 20 指（动作序 [左臂7/左手20/右臂7/右手20]）；臂与左手归 ACT，54→20 维缩探索面
+expl_noise: 0.5           # 行为噪声 std（×residual_bound；绝对 0.0025 rad）
+greedy_prob: 0.5          # 无噪声纯贪心采集概率（保证缓冲有成功条，critic 有正样本）
+actor_l2: 0.5            # actor 损失 L2 锚定系数（×(Δa/bound)² 均值）
+train_jitter: 0.015       # 训练点 ±1.5cm 抖动采样（对齐 rand20 评测分布，提泛化；0=只在 9 点上）
+points:                   # 白名单 9 点（同 record_pick_up_marker.yaml，3.7 物理测绘定稿）
+- [-0.025, 0.0]
+- [0.0, -0.05]
+- [0.0, 0.0]
+- [0.05, -0.04]
+- [0.05, -0.01]
+- [0.05, 0.0]
+- [0.075, -0.05]
+- [0.075, 0.0]
+- [0.075, 0.025]
+
+# TD3（关键数字对齐 PLAN「关键数字速查」）
+gamma_frame: 0.99         # per-frame 折扣
+batch_size: 128
+buffer_size: 200000
+actor_lr: 0.00005   # 20-D 探索面小，lr 回升 5e-5；rollback 兜底
+critic_lr: 0.00005
+tau: 0.005
+policy_delay: 2
+target_noise: 0.2         # 目标策略平滑噪声 std（×residual_bound）
+target_noise_clip: 0.5    # （×residual_bound）
+grad_steps_per_episode: 100   # 200 实测 actor 漂移过快（Q 高估死亡螺旋）
+critic_warmup_transitions: 500   # 之前只更新 critic（critic warm-up，actor 保持 zero-init）
+
+# 终局奖励
+r_success: 0.0
+r_fail: -1.0
+
+# 训练预算与评估
+max_transitions: 50000   # per-frame 粒度（26 条≈5k；曲线仍在爬升，对齐论文数千 chunk 级转移的量级）
+eval_every_episodes: 10
+eval_rand_every: 30       # 每 N 条加测一轮 rand20（与终评同 seed 2026 协议）   # whitelist9 贪心评测（seed 3000+i，与 eval_act.py 同协议）
