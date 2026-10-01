@@ -93,7 +93,11 @@ MVP 只复现**骨架**：codec/SFT/DAgger/RL 四步 → 简化为 **ACT 模仿�
 
 - [ ] 实现论文 Step 1 的 chunk-VAE codec（每手 20→9，0.43M 参数小模型，训练简单）→ latent residual RL 对比 raw residual（复现论文核心实验 Fig.9 latent vs raw）
 - [ ] Sim-DAgger：脚本专家自动接管（失败检测触发 + 状态回滚 + 动作混合）→ 数据回流重训 ACT（对应论文 Step 3，用混合代替人工 2 s blend）
-- [ ] 第二个任务 Transfer between Hands（双手传递）
+- [~] 第二个任务 Transfer between Hands（双手传递）——**脚本原型已跑通（2026-10-01，确定性口径）**
+  - 新增 `scripts/proto_transfer.py` + `configs/transfer_marker.yaml`，串行四阶段 handoff/catch/release/hold；
+  - 两个决定性设计：① 右手静止/撤离目标用 carry 笛卡尔链实际末点 `carry_q[-1]`（独立 IK 解 q_handoff 是不可达奇异构型，阶跃切入会令右臂在前馈下发散，见 PROGRESS 问题 27）；② 左手不从侧方横切（掌骨先撞落笔）而从笔自由端外**沿笔轴 +a 套入** pre_pinch 凹口、末段合拢 pinch3（问题 28）；
+  - 已验证：reset(0,0) yaw0 seed1002 + 右手 plan_seed4（CLI 默认）→ hold 连续 16/10 帧，两次复现数值一致；
+  - 遗留：跨 pick 姿态鲁棒——会合点随 pick 后笔轴 a 漂移，seed2 触发左肘奇异 / seed3 会合点到桌沿（问题 29/30）；下一步在 carry 前做笔轴朝向规范化，再录 transfer 示教并接 ACT/残差 RL 训练。
 - [ ] 换 Dexora 的 DiT policy 或接入其 100K 仿真预训练数据
 
 ## 5. 建议目录结构
@@ -147,6 +151,7 @@ bimanual_dex_mvp/
 9. **M1 专家验收口径**：宽包络成功率 ≥80% 未达（3.5 下 narrow9@重试5 为 5/9，3.7 下 3/9）；改「好点白名单（3.7 实测 9 点）+ plan_seed≤5 重试 + 甩飞脏成功过滤」采集，策略泛化范围=白名单邻域（用户确认）。
 10. **M3 RL 转移粒度改 per-frame + 奖励 shaping**：论文/原计划为 chunk 级转移 C=16；实测恒定 16 帧残差偏移对接近阶段毁灭性（噪声 0.03 rad 全灭），且 0/-1 稀疏终局奖励在 chunk 粒度信用分配过难，actor 两次死于 Q 高估漂移（0/9）。改为 per-frame 决策与转移（γ=0.99/frame 不变）、加 pen_z 每帧微 shaping（w=2×clip±0.005），终局奖励 成功 0/失败 -1 不变。
 11. **M3 残差只作用右手 20 指**（`residual_dims: [34, 54]`，动作序 [左臂7/左手20/右臂7/右手20]）：原计划 raw 54-D 全维残差；实测 54-D 下 bound 受 Q 高估约束只能 0.005（≈1mm/帧），修正不动 cm 级手部对位误差，35k 转移与基线持平。改手部 20-D 后 bound 放宽至 0.02，wl9 100%。另加 `train_jitter: 0.015`（采集起点抖动，泛化探索用，rand20 收益已饱和仍 55%）。
+12. **M4 Transfer 原型为确定性脚本、串行交接、固定成功口径**：当前 `proto_transfer.py` 是手工时序的脚本专家（非学习策略），用于先验证任务物理可行性与采集原型；采用**串行**交接（右手先送到位静止 → 左手再沿笔轴套入 → 右手释放）而非双臂协同动态交接（后者在 ±1cm 精度要求下暴露重力前馈极限环，已通过 pick 后臂阻尼 10 缓解）；成功口径限定 reset seed1002 + 右手 plan_seed4（plan_seed 2/3 因 pick 后笔轴朝向不同失败），跨姿态泛化待笔轴规范化后再谈，暂不作为成功率结论。任务目标与成功判定（左手独握、笔抬离桌面、稳定）不变。
 
 ## 8. 参考资料
 

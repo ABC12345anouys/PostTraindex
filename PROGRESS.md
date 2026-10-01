@@ -11,14 +11,16 @@
 | M1 | 脚本示教 + LeRobot 数据集（100–200 条） | ✅ 完成（2026-09-29） | 160 条 LeRobot v3（train 130 / val 30）；白名单好点 9 点 + plan_seed 重试 + 脏成功过滤；宽包络 80% 未达（偏离已登记，用户确认） |
 | M2 | ACT 模仿学习（基线 ≥40%） | ✅ 完成（2026-09-30） | 20k 步 loss 0.048；闭环 ensemble0.01：白名单 7/9=78%、rand20 12/20=60%，过 ≥40% 闸门 |
 | M3 | 残差 TD3 | ✅ 完成（2026-09-30） | 手部 20-D 残差：任务分布 wl9 9/9=100%（基线 89%）达成 ≥90%；泛化 rand20 55% 持平基线（死区归因，上限 ~75–80%）；success-vs-transitions 曲线 14 点已产出 |
-| M4 | Phase-B 可选项（codec 对比 / Sim-DAgger / Transfer 任务） | ⬜ 未开始 | 按兴趣选做 |
+| M4 | Phase-B 可选项（codec 对比 / Sim-DAgger / Transfer 任务） | 🟡 进行中（2026-10-01） | **Transfer between Hands 原型跑通**：右手抓笔→沿笔轴交接给左手，确定性协议（reset seed1002 + 右手 plan_seed4）两次复现均 hold 连续 16/10 帧；跨 pick 姿态鲁棒待做（问题 29） |
 
 **当前阶段**：M0–M3 已完成。场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
 3 路 224² 相机、20 Hz 控制（frame_skip=25，sim dt=0.002）、π/18 限幅、reset 笔随机 + 静置、
 成功判定（手接触+整体抬离桌面 3 cm+连续 0.5 s 稳定）全部就绪。
 
-**下次工作入口**：M3 已收官（手部 20-D 残差，wl9 100%）。M4（可选 Phase-B）待指令：
-codec latent vs raw 残差对比（论文 Fig.9 核心实验）/ Sim-DAgger / Transfer between Hands。
+**下次工作入口**：M4 首个子任务 **Transfer between Hands 脚本原型已跑通**（`scripts/proto_transfer.py`，
+确定性协议 seed1002 + plan_seed4，hold 16/10 帧）。待用户选方向：
+① carry 前笔轴规范化，做跨 pick 姿态鲁棒（问题 29）→ 再录制 transfer 示教/训练；
+② 其余 Phase-B（codec latent vs raw 残差对比 / Sim-DAgger）；③ 提交本轮 M4 代码到 GitHub（当前未 commit）。
 
 ### M0 验收记录
 
@@ -60,6 +62,11 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
 | 24 | Q 高估漂移死亡螺旋（三波）：actor 追 critic 外推伪峰→0/9 | ①噪声 0.3→0.05+greedy 混合 ②bound 0.1→0.005 硬约束+actor lr 1e-5+L2 锚 0.5+LayerNorm critic ③高原回滚（stall2 恢复 best+lr 减半）；TD3+BC 归一在 Q≈0 域爆炸已证伪 | ✅ 已修（v6 配方） |
 | 25 | 评测数值噪声：cudnn benchmark/TF32 致 ACT 推理微抖，翻转边界 seed，wl9 同 actor 两次测 78% vs 89%（±11–22%） | eval_act.py / residual_td3.py 均加确定性 flags（benchmark=False, deterministic=True, 禁 TF32）；基线重测：wl9 8/9=89%、rand20 11/20=55% | ✅ 已修 |
 | 26 | raw 54-D 残差与基线持平，≥90% 未达 | bound 受 Q 高估约束只能 0.005（≈1mm/帧），修正力被 54 维稀释、修不动 cm 级手部对位误差（35k 转移 wl9 89%/rand20 60% ≈ 基线 89%/55%） | 残差只作用右手 20 指（residual_dims [34,54]，动作序 [左臂7/左手20/右臂7/右手20]），bound 放宽 0.02：win20 90–95%、wl9 两次 100%；终评 wl9 9/9=100% ✅、rand20 55% 持平（~4–5 失败点落已知死区 y>0 / y<−0.05 包络外 / x≈0.025 坏带，上限 ~75–80%，非 RL 失效）；train_jitter 0.015 续训无进一步收益（lr 已 4 次回滚降至 1.6e-6），收官 | ✅ 解决 |
+
+| 27 | M4 交接 catch 段右臂剧烈发散（右腕 y 单帧瞬移 ~40 cm、笔被甩高 ~15 cm、穿模），与左臂是否运动无关 | 排查中先后证伪两条假设：重力前馈 `qfrc_bias[6:]` 的双臂 qvel 科氏耦合（放慢 catch 一倍无效）、欠阻尼慢不稳定（阻尼 10→30 反而更早炸）；**冻结左臂纯静止仍 h5 炸**才定位为**右手静止目标阶跃**——catch 把右手指令从 carry 链实际末点切到独立 IK 解 `q_handoff`，而 `handoff_along=-0.13` 下 q_handoff 是 pos 6.8cm/ori 26.5° 残差的不可达奇异构型，位置伺服强追不可达目标在重力前馈下发散 | catch/release 右手静止与撤离基准统一改用 carry 笛卡尔链实际末点 `carry_q[-1]`（不再用独立解 q_handoff），消除 handoff→catch 目标跳变；右腕随即锁死、笔长时间稳定 | ✅ 解决 |
+| 28 | 左手从侧方(-y)水平横切承接，grasp_site 距笔还有 10 cm 时左手小指掌骨（lh_lfmetacarpal）先撞落笔；open 直伸手型指尖还低于 site，会从笔下方铲入挑高 | `lh_grasp_site` 挂在拇指基座（thbase，手掌桡侧），手整体沿 -y 平移时掌尺侧/掌骨先于 pinch 指尖到达笔杆；open 手型四指伸直、指尖几何远低于 pinch3 标定位 | 改**沿笔轴套入**：预抓位=承接位沿 -a 退 `axis_approach=0.13`m（笔自由端之外，朝向直接用最终抓握 R_l），catch 保持朝向沿 +a 直线平移，笔杆滑进 pre_pinch 张开的拇指-食/中指凹口，套入后 40%（`catch_close_start=0.6`）才合拢 pinch3；撤退/套入全程用 pre_pinch 而非 open | ✅ 解决（plan_seed4 成功） |
+| 29 | 交接对 pick 后笔轴朝向 a 高度敏感：plan_seed 2/3/4 仅 4 成功（1/3） | handoff 会合点 `pen_pos = pick_pen + a·handoff_along` 完全由 pick 后笔轴 a 决定：seed2 的 a 使会合点落身体正中 x≈-0.01，触发左肘伸直奇异（左承接朝向 IK 残差 67.6°，套入仅小指节刮笔、抓空）；seed3 会合点偏到 y+0.24/z0.52 桌沿，carry 阶段即掉笔；seed4 a=[0.90,-0.22,-0.37] 会合点在左臂舒适侧 x=-0.105 才成立 | 当前以**确定性协议** reset seed1002 + 右手 plan_seed4 作为 M4 原型成功口径（两次复现数值完全一致）；跨姿态鲁棒需在 carry 前加"在右手中把笔旋转规范化到标准轴朝向"步骤（利用腕自由度），列为下一阶段 | ⏳ 待做（已限定成功口径） |
+| 30 | 左臂在身体中央会合点 IK 解出肘 `l_joint4≈-0.079`（距 range 上限 -0.07 仅 0.6°，近伸直奇异、无刚度），右手同位置肘=-1.19 弯而稳 | 7-DoF 逆解零空间偏向该构型；且 `ArmIK.solve` 的 pos_tol=5mm/ori_tol=5° 提前退出会让零空间屈肘项一次都不执行 | 加 `tuck_solve()`：置 `pos_tol/ori_tol=-1` 强制跑满 500 迭代 + 零空间屈肘重解，肘从 -0.079 拉到 -0.67；保留于 plan_left_goal（最终由沿轴套入+选 seed4 共同规避中央奇异） | ✅ 缓解（根因仍需笔轴规范化） |
 
 ### 已识别的风险预案（开工前）
 
@@ -135,6 +142,16 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
   4. 产物：`verify_out/rl_m3_final.json`、`rl_m3_curve.png/.csv`（14 个 eval 点）、`checkpoints/rl_m3/best_actor.pt`；
   5. 登记 PLAN 偏离 #11（手部 20-D 残差 + train_jitter）。
   → M3 验收通过：任务分布 100% ≥90% ✅ + success-vs-transitions 曲线 ✅。下一步：M4（可选 Phase-B）待用户指令。
+
+- **2026-10-01 M4 Transfer between Hands 脚本原型跑通**：
+  1. 新增 `scripts/proto_transfer.py`（~560 行）+ `configs/transfer_marker.yaml`（base 复用 pick_up_marker.yaml），复用 env `step_rad`、`ArmIK`、`ScriptedExpert`、contactfilter；串行四阶段（均 20Hz）：**handoff**（右手 min-jerk carry 到会合点并静止持笔，左手先撤到笔自由端外的沿轴预抓位）→ **catch**（左手保持最终抓握朝向沿笔轴 +a 直线套入，pre_pinch→末段 pinch3 合拢，双手共持）→ **release**（右手 open 沿笔轴撤 0.10m）→ **hold**（左手 pinch3 独握，连续 10 帧判成功）；
+  2. **关键根因一（问题 27）**：catch 段右臂目标从 carry 实际末点跳到独立 IK 解 `q_handoff`（6.8cm/26.5° 不可达奇异构型），位置伺服在前馈下发散（右腕瞬移 40cm、笔甩高 15cm）；通过"放慢 catch/冻结左臂/加大阻尼"三个对照实验排除 qvel 耦合与欠阻尼后定位，改右手静止/撤离基准为 `carry_q[-1]` 即稳；
+  3. **关键根因二（问题 28）**：左手侧方 -y 横切时掌尺侧掌骨先撞落笔、open 指尖下铲；改沿笔轴套入（`axis_approach=0.13`、朝向锁定 R_l、pre_pinch 凹口吞入笔杆、末 40% 合拢）；
+  4. 沿用前序"pick 后 `apply_arm_damping(10)`"抑制重力前馈极限环；新增 `tuck_solve()` 零空间屈肘缓解左臂中央会合点肘伸直奇异（问题 30）；
+  5. **结果（确定性协议 reset seed1002 + 右手 plan_seed4，CLI 已设为默认）**：两次复现数值一致——pen_z handoff 0.751（右手独握）→ catch 0.674（左手接管、右手松开）→ release 0.678 → hold 0.677，**hold 连续 16/10 帧，TRANSFER success=True**；plan_seed 2/3 因 pick 后笔轴朝向不同而失败（问题 29，当前口径限定 seed4）；
+  6. 产物：`verify_out/transfer_proto/{carry,gather,handoff,catch,release,hold}.png + result.json`；已精简逐帧诊断输出；
+  7. 本轮 M4 代码（proto_transfer.py、transfer_marker.yaml、PROGRESS/PLAN）**尚未 git commit**，等用户明确指示再提交推送。
+  → M4 Transfer 脚本可行性已验证（确定性）。下一步待指令：笔轴规范化做跨姿态鲁棒 → 录 transfer 示教/训练；或其它 Phase-B；或先提交代码。
 
 ## 四、关键数字速查（对齐论文）
 
