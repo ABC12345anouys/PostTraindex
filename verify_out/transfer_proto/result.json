@@ -1,0 +1,31 @@
+{
+ "pick_frames": 194,
+ "phases": [
+  {
+   "name": "handoff",
+   "frames": 50,
+   "pen_z_end": 0.751
+  },
+  {
+   "name": "catch",
+   "frames": 50,
+   "pen_z_end": 0.674
+  },
+  {
+   "name": "release",
+   "frames": 40,
+   "pen_z_end": 0.678
+  },
+  {
+   "name": "hold",
+   "frames": 16,
+   "lh": true,
+   "rh": false,
+   "lifted": true,
+   "stable": true,
+   "hold": 16,
+   "pen_z_end": 0.677
+  }
+ ],
+ "success": true
+}

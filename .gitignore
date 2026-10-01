@@ -11,3 +11,7 @@ verify_out/diag_*/*
 verify_out/expert_tune/*
 !verify_out/diag_*/montage.png
 !verify_out/expert_tune/montage.png
+!verify_out/transfer_proto/
+verify_out/transfer_proto/*
+!verify_out/transfer_proto/*.png
+!verify_out/transfer_proto/result.json
