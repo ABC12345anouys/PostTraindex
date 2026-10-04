@@ -93,7 +93,7 @@ MVP 只复现**骨架**：codec/SFT/DAgger/RL 四步 → 简化为 **ACT 模仿�
 
 - [ ] 实现论文 Step 1 的 chunk-VAE codec（每手 20→9，0.43M 参数小模型，训练简单）→ latent residual RL 对比 raw residual（复现论文核心实验 Fig.9 latent vs raw）
 - [ ] Sim-DAgger：脚本专家自动接管（失败检测触发 + 状态回滚 + 动作混合）→ 数据回流重训 ACT（对应论文 Step 3，用混合代替人工 2 s blend）
-- [~] 第二个任务 Transfer between Hands（双手传递）——**脚本原型已跑通（2026-10-01，确定性口径）**
+- [x] 第二个任务 Transfer between Hands（双手传递）——**n1–n5 完成（2026-10-04）**：脚本原型→浅轴池扫描→46 条示教→ACT 40k 闭环 5/12=42%（过 ≥40% 闸门），n6 残差 RL 待跑
   - 新增 `scripts/proto_transfer.py` + `configs/transfer_marker.yaml`，串行四阶段 handoff/catch/release/hold；
   - 两个决定性设计：① 右手静止/撤离目标用 carry 笛卡尔链实际末点 `carry_q[-1]`（独立 IK 解 q_handoff 是不可达奇异构型，阶跃切入会令右臂在前馈下发散，见 PROGRESS 问题 27）；② 左手不从侧方横切（掌骨先撞落笔）而从笔自由端外**沿笔轴 +a 套入** pre_pinch 凹口、末段合拢 pinch3（问题 28）；
   - 已验证：reset(0,0) yaw0 seed1002 + 右手 plan_seed4（CLI 默认）→ hold 连续 16/10 帧，两次复现数值一致；

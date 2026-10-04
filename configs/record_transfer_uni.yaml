@@ -1,0 +1,12 @@
+# M4 n5 单模态对照数据集：每 (point,plan_seed) 变体只保留 1 种参数集风格
+# （46 条池同一起点最多 8 种风格 -> ACT 推理 latent=0 输出模态均值，疑似 0/12 根因）
+pool: verify_out/transfer_pool_unimodal.json
+total: 12
+val_every: 1000        # 全进 train（val 不用；避免 12 条再切）
+out_root: data
+train_name: bimanual_transfer_uni_train
+val_name: bimanual_transfer_uni_val
+manifest: data/transfer_record_uni_manifest.json
+debug_root: verify_out/transfer_record_uni_debug
+fps: 20
+task: transfer_marker

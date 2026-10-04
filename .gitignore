@@ -25,3 +25,11 @@ verify_out/transfer_pool/*
 verify_out/transfer_pool2/*
 !verify_out/transfer_pool2/pool_matrix.png
 !verify_out/transfer_dataset_qc.png
+
+# M4 n5 ACT 闭环评测产物（只入库汇总图 + 逐 ckpt 成功率图/results.json，不入库逐帧 v*.png）
+!verify_out/act_m4_curves.png
+!verify_out/act_m4_uni_curves.png
+!verify_out/eval_transfer_act_m4_*_v3/
+verify_out/eval_transfer_act_m4_*_v3/v*.png
+!verify_out/eval_transfer_act_m4_uni_*_v3/
+verify_out/eval_transfer_act_m4_uni_*_v3/v*.png

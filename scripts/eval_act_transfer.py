@@ -75,8 +75,11 @@ def main():
     hold_need = int(tc["hold_frames"])
     hz = float(cfg.get("control_hz", 20))
 
+    # hold_frames=10**9：禁用 env 级 any-hand 成功早停（实测右手停滞持笔 10 帧即
+    # term=True 截断 episode，掩盖迟到交接）；transfer 成功由 lh&!rh 严格口径判定
     env_cfg = BimanualDexConfig(max_episode_seconds=25,
-                                pen_xy=((0.0, 0.0), (0.0, 0.0)))
+                                pen_xy=((0.0, 0.0), (0.0, 0.0)),
+                                hold_frames=10 ** 9)
     env = BimanualDexEnv(config=env_cfg, render_mode="rgb_array")
     unwrapped = env
     PT.build_geom_sides(unwrapped)

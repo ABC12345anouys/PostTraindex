@@ -46,6 +46,12 @@ for _r in (0.002, 0.005, 0.008, 0.012):
 PLAN_SEEDS = list(range(10))
 
 
+def dense_points(half=0.006, step=0.002):
+    # ±half 内 step 间距稠密网格（补环点间隙，配已验证 ps 族用）
+    v = np.arange(-half, half + 1e-9, step)
+    return [(round(float(x), 6), round(float(y), 6)) for x in v for y in v]
+
+
 def combo_rows(shard, shards, out_dir):
     """跑本片所有组合，增量写 scan_poses_s{shard}.json（可续跑）。"""
     cfg = PT.load_cfg(ROOT / "configs/transfer_marker.yaml")
@@ -232,10 +238,14 @@ def main():
     ap.add_argument("--merge", action="store_true")
     ap.add_argument("--out", default="verify_out/scan_pick")
     ap.add_argument("--plan-seeds", type=int, nargs="+", default=None)
+    ap.add_argument("--dense", action="store_true", help="±6mm/2mm 稠密网格替代环点")
     args = ap.parse_args()
     if args.plan_seeds is not None:
         global PLAN_SEEDS
         PLAN_SEEDS = list(args.plan_seeds)
+    if args.dense:
+        global POINTS
+        POINTS = dense_points()
     out_dir = ROOT / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
     if args.merge:

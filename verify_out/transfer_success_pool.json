@@ -1069,5 +1069,135 @@
   "param_set": "cs07",
   "success": true,
   "out": "verify_out/transfer_pool2/xm0.012_yp0.000_s19_cs07"
+ },
+ {
+  "point": [
+   -0.004,
+   -0.004
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0285,
+   -0.0306,
+   0.6483
+  ],
+  "settle_axis": [
+   0.8912,
+   -0.2765,
+   -0.3597
+  ],
+  "pen_low_z": 0.6139,
+  "grasped_end": true,
+  "angle_deg": 3.1,
+  "shallow": true,
+  "param_set": "dz03",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xm0.004_ym0.004_s19_dz03"
+ },
+ {
+  "point": [
+   -0.004,
+   -0.004
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0285,
+   -0.0306,
+   0.6483
+  ],
+  "settle_axis": [
+   0.8912,
+   -0.2765,
+   -0.3597
+  ],
+  "pen_low_z": 0.6139,
+  "grasped_end": true,
+  "angle_deg": 3.1,
+  "shallow": true,
+  "param_set": "cs04",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xm0.004_ym0.004_s19_cs04"
+ },
+ {
+  "point": [
+   -0.004,
+   -0.004
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0285,
+   -0.0306,
+   0.6483
+  ],
+  "settle_axis": [
+   0.8912,
+   -0.2765,
+   -0.3597
+  ],
+  "pen_low_z": 0.6139,
+  "grasped_end": true,
+  "angle_deg": 3.1,
+  "shallow": true,
+  "param_set": "ap01",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xm0.004_ym0.004_s19_ap01"
+ },
+ {
+  "point": [
+   0.002,
+   -0.002
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.017,
+   -0.0211,
+   0.6535
+  ],
+  "settle_axis": [
+   0.8761,
+   -0.3,
+   -0.3774
+  ],
+  "pen_low_z": 0.6178,
+  "grasped_end": true,
+  "angle_deg": 4.67,
+  "shallow": true,
+  "param_set": "cs07",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xp0.002_ym0.002_s19_cs07"
+ },
+ {
+  "point": [
+   -0.002,
+   -0.006
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0272,
+   -0.0312,
+   0.6507
+  ],
+  "settle_axis": [
+   0.8864,
+   -0.3378,
+   -0.3164
+  ],
+  "pen_low_z": 0.6194,
+  "grasped_end": true,
+  "angle_deg": 7.18,
+  "shallow": true,
+  "param_set": "am01",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xm0.002_ym0.006_s19_am01"
  }
 ]

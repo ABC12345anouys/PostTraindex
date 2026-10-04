@@ -11,16 +11,17 @@
 | M1 | 脚本示教 + LeRobot 数据集（100–200 条） | ✅ 完成（2026-09-29） | 160 条 LeRobot v3（train 130 / val 30）；白名单好点 9 点 + plan_seed 重试 + 脏成功过滤；宽包络 80% 未达（偏离已登记，用户确认） |
 | M2 | ACT 模仿学习（基线 ≥40%） | ✅ 完成（2026-09-30） | 20k 步 loss 0.048；闭环 ensemble0.01：白名单 7/9=78%、rand20 12/20=60%，过 ≥40% 闸门 |
 | M3 | 残差 TD3 | ✅ 完成（2026-09-30） | 手部 20-D 残差：任务分布 wl9 9/9=100%（基线 89%）达成 ≥90%；泛化 rand20 55% 持平基线（死区归因，上限 ~75–80%）；success-vs-transitions 曲线 14 点已产出 |
-| M4 | Phase-B 可选项（codec 对比 / Sim-DAgger / Transfer 任务） | 🟡 进行中（2026-10-01） | **Transfer between Hands 原型跑通**：右手抓笔→沿笔轴交接给左手，确定性协议（reset seed1002 + 右手 plan_seed4）两次复现均 hold 连续 16/10 帧；跨 pick 姿态鲁棒待做（问题 29） |
+| M4 | Phase-B：Transfer between Hands 完整流水线 | 🟡 n5 完成（2026-10-04） | 46 条示教 ACT 40k 闭环 **5/12=42% 过 ≥40% 闸门**（问题 42 对照实验）；下一步 n6 残差 RL；脚本原型→扫浅轴池→录数→ACT 流水线在第二任务上复现成功 |
 
-**当前阶段**：M0–M3 已完成。场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
+**当前阶段**：M0–M3 已完成；M4 Transfer 任务 n1–n5 已收官脚本专家→扫描→录数→ACT 四段流水线。
+场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
 3 路 224² 相机、20 Hz 控制（frame_skip=25，sim dt=0.002）、π/18 限幅、reset 笔随机 + 静置、
 成功判定（手接触+整体抬离桌面 3 cm+连续 0.5 s 稳定）全部就绪。
 
-**下次工作入口**：M4 首个子任务 **Transfer between Hands 脚本原型已跑通**（`scripts/proto_transfer.py`，
-确定性协议 seed1002 + plan_seed4，hold 16/10 帧）。待用户选方向：
-① carry 前笔轴规范化，做跨 pick 姿态鲁棒（问题 29）→ 再录制 transfer 示教/训练；
-② 其余 Phase-B（codec latent vs raw 残差对比 / Sim-DAgger）；③ 提交本轮 M4 代码到 GitHub（当前未 commit）。
+**下次工作入口（n6）**：以多模态 40k ckpt（`checkpoints/act_m4/.../040000`，闭环 5/12=42%）为冻结基线，
+回填 `configs/residual_td3_transfer.yaml` 的 act_ckpt，跑 `policy/residual_td3_transfer.py`
+（A_DIM=40 双切片 [7,27]+[34,54]，已冒烟通过）凑 50k transitions，出 success-vs-transitions 曲线。
+注意 eval/RL 环境必须保留 hold_frames=10**9 修复（问题 41）。
 
 ### M0 验收记录
 
@@ -261,3 +262,49 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
   产物：data/bimanual_transfer_{train,val} + data/transfer_dataset_qc.png。
 - 踩坑：LeRobotDataset.resume 需 HF_HUB_OFFLINE=1（否则连 hub）；val 零条空壳 meta 不全
   （缺 tasks.parquet），resume 前须检测重建（已固化在 make_datasets）。
+
+## M4 n5：Transfer ACT 闭环 + 多模态崩塌对照实验（2026-10-04）
+
+### 问题 41：eval/RL 环境自身成功判定提前截断 episode → 假 0%
+- 现象：旧口径 eval 普遍 ~63 帧 term=True 截断，迟到的左手交接根本没机会发生，旧 0/9 结果全部含此坑。
+- 根因：env 成功条件=任一手 grasped&lifted&stable 连续 hold_frames=10 帧；右手停滞持笔（handoff 等待段）
+  单独满足该条件，episode 被当成成功提前结束。
+- 修复：`scripts/eval_act_transfer.py` 与 `policy/residual_td3_transfer.py` 的 BimanualDexConfig 显式
+  `hold_frames=10**9` 禁用该截断；掉笔 fall_z=0.35 / xy_limit=0.55 / max_steps=500 超时仍然生效。
+- 口径核验：prefix pick 194 + settle 25 = 219 帧，策略段 200 帧（max_steps=500 即 25s）无截断。修复后评测统一 tag 后缀 `_v3`。
+
+### 两臂数据集（控制变量：同 12 个 (point, plan_seed) 评测变体）
+- 多模态 46 条：12 变体 × 平均 4 种参数风格（def/dz05/cs05/…），train37/val9；
+  同一初始 obs 最多 8 种不同动作标签，ACT 推理 latent=0 输出模态均值——多模态崩塌假设来源。
+- 单模态 12 条：每 (point,ps) 变体只保留 def 一种风格（`verify_out/transfer_pool_unimodal.json`），
+  录数 12/12 全过、各 156 帧 hold=16，train9/val3。
+
+### 对照结果（各 40k 步、同评测 12 变体、_v3 口径；曲线 verify_out/act_m4{,_uni}_curves.png）
+
+| ckpt | 多模态 46 条 | 单模态 12 条 |
+|---|---|---|
+| 5k | 0/12 = 0% | — |
+| 10k | 2/12 = 17% | **5/12 = 42%** |
+| 20k | 0/12 = 0% | 0/12 = 0% |
+| 30k | 1/12 = 8% | 0/12 = 0% |
+| 40k | **5/12 = 42%**（loss 0.055，55 epoch） | 0/12 = 0%（loss 0.054，171 epoch） |
+
+### 问题 42：「多模态崩塌」假设证伪——真问题是小数据过拟合 + 长程策略脆弱
+- 假设：同一变体多种风格动作标签导致 ACT 学模态均值 → 0%；预期单模态显著且稳定更好。
+- 结果：单模态仅 10k 早期达 42%，继续训练反崩到 0%；多模态晚期（40k）达到同样的 42% 且仍在上升通道。
+  两者 loss 同为 0.054/0.055，闭环天差地别——**单模态 12 条 / 171 epoch 是典型小数据闭环过拟合**，
+  多风格数据反而起到正则作用。多模态崩塌不成立。
+- 非单调性（两臂 20k 同为 0%）：12 变体小样本评测 × 长程 chunk 策略，少量轨迹分叉即造成 0↔5/12 跳变，
+  后续以「整条曲线 + 多 ckpt」而非单点成功率判读。
+- 失败形态（40k 多模态）：成功 5、carry/catch 途中掉笔 6、悬空未交接 1；
+  40k 单模态：掉笔 9 + 桌面拖行 3（pen_z_min~0.50 拖满 200 帧），无 near-miss。
+- 决策：n6 冻结基线选多模态 40k（5/12=42%，过 M2 同款 ≥40% 闸门；论文经验 <20% 时残差 RL 无效，42% 可用）。
+
+### 本轮工程产物
+- 新增：`scripts/eval_sweep_m4.py`（逐 ckpt 评测 + 成功率/loss 双面板曲线，参数化支持两臂）、
+  `policy/residual_td3_transfer.py` + `configs/residual_td3_transfer.yaml`（A_DIM=40 双切片，冒烟通过）、
+  `configs/record_transfer_uni.yaml` + `policy/act_lerobot/train_transfer_uni.sh`。
+- 修改：`scripts/eval_act_transfer.py`（hold_frames 修复）、`scripts/scan_pick_poses.py`（round5 补扫）。
+- 数据/图：data/bimanual_transfer{,_uni}_{train,val}（不入库）、verify_out/act_m4{,_uni}_curves.png、
+  verify_out/eval_transfer_act_m4{,_uni}_*_v3/（results.json + success_rate.png）、
+  verify_out/transfer_pool_unimodal.json。

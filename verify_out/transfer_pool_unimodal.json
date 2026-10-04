@@ -1,0 +1,316 @@
+[
+ {
+  "point": [
+   -0.004,
+   0.006928
+  ],
+  "plan_seed": 2,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0206,
+   -0.0149,
+   0.6537
+  ],
+  "settle_axis": [
+   0.8985,
+   -0.2782,
+   -0.3395
+  ],
+  "pen_low_z": 0.6207,
+  "grasped_end": true,
+  "angle_deg": 3.47,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool/xm0.004_yp0.007_s2_def",
+  "cached": true
+ },
+ {
+  "point": [
+   -0.012,
+   0.0
+  ],
+  "plan_seed": 4,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.019,
+   -0.0243,
+   0.6478
+  ],
+  "settle_axis": [
+   0.8886,
+   -0.2721,
+   -0.3692
+  ],
+  "pen_low_z": 0.6126,
+  "grasped_end": true,
+  "angle_deg": 2.88,
+  "shallow": true,
+  "param_set": "dz06",
+  "success": true,
+  "out": "verify_out/transfer_pool/xm0.012_yp0.000_s4_dz06"
+ },
+ {
+  "point": [
+   0.0,
+   0.0
+  ],
+  "plan_seed": 4,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0126,
+   -0.0172,
+   0.6549
+  ],
+  "settle_axis": [
+   0.9034,
+   -0.224,
+   -0.3656
+  ],
+  "pen_low_z": 0.62,
+  "grasped_end": true,
+  "angle_deg": 0.03,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool/xp0.000_yp0.000_s4_def",
+  "cached": true
+ },
+ {
+  "point": [
+   0.004,
+   0.006928
+  ],
+  "plan_seed": 11,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.027,
+   -0.0121,
+   0.6487
+  ],
+  "settle_axis": [
+   0.8894,
+   -0.3205,
+   -0.3259
+  ],
+  "pen_low_z": 0.6167,
+  "grasped_end": true,
+  "angle_deg": 6.04,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool2/xp0.004_yp0.007_s11_def"
+ },
+ {
+  "point": [
+   -0.012,
+   0.0
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0094,
+   -0.029,
+   0.6535
+  ],
+  "settle_axis": [
+   0.8761,
+   -0.3748,
+   -0.3034
+  ],
+  "pen_low_z": 0.6231,
+  "grasped_end": true,
+  "angle_deg": 9.49,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool2/xm0.012_yp0.000_s19_def"
+ },
+ {
+  "point": [
+   -0.004,
+   -0.004
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0285,
+   -0.0306,
+   0.6483
+  ],
+  "settle_axis": [
+   0.8912,
+   -0.2765,
+   -0.3597
+  ],
+  "pen_low_z": 0.6139,
+  "grasped_end": true,
+  "angle_deg": 3.1,
+  "shallow": true,
+  "param_set": "dz03",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xm0.004_ym0.004_s19_dz03"
+ },
+ {
+  "point": [
+   -0.002,
+   -0.006
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0272,
+   -0.0312,
+   0.6507
+  ],
+  "settle_axis": [
+   0.8864,
+   -0.3378,
+   -0.3164
+  ],
+  "pen_low_z": 0.6194,
+  "grasped_end": true,
+  "angle_deg": 7.18,
+  "shallow": true,
+  "param_set": "am01",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xm0.002_ym0.006_s19_am01"
+ },
+ {
+  "point": [
+   -0.002,
+   0.0
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0339,
+   -0.0248,
+   0.6446
+  ],
+  "settle_axis": [
+   0.8503,
+   -0.2763,
+   -0.4479
+  ],
+  "pen_low_z": 0.6039,
+  "grasped_end": true,
+  "angle_deg": 6.34,
+  "shallow": true,
+  "param_set": "am01",
+  "success": true,
+  "out": "verify_out/transfer_pool2/xm0.002_yp0.000_s19_am01"
+ },
+ {
+  "point": [
+   -0.001,
+   0.001732
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0338,
+   -0.0235,
+   0.6481
+  ],
+  "settle_axis": [
+   0.8747,
+   -0.29,
+   -0.3883
+  ],
+  "pen_low_z": 0.6116,
+  "grasped_end": true,
+  "angle_deg": 4.31,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool2/xm0.001_yp0.002_s19_def"
+ },
+ {
+  "point": [
+   0.001,
+   0.001732
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0311,
+   -0.0226,
+   0.6502
+  ],
+  "settle_axis": [
+   0.885,
+   -0.2773,
+   -0.3741
+  ],
+  "pen_low_z": 0.6147,
+  "grasped_end": true,
+  "angle_deg": 3.26,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool2/xp0.001_yp0.002_s19_def"
+ },
+ {
+  "point": [
+   0.002,
+   -0.002
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.017,
+   -0.0211,
+   0.6535
+  ],
+  "settle_axis": [
+   0.8761,
+   -0.3,
+   -0.3774
+  ],
+  "pen_low_z": 0.6178,
+  "grasped_end": true,
+  "angle_deg": 4.67,
+  "shallow": true,
+  "param_set": "cs07",
+  "success": true,
+  "out": "verify_out/transfer_pool4/xp0.002_ym0.002_s19_cs07"
+ },
+ {
+  "point": [
+   0.006,
+   0.010392
+  ],
+  "plan_seed": 19,
+  "pick_grasped": true,
+  "pick_frames": 194,
+  "settle_pen": [
+   0.0177,
+   -0.0147,
+   0.6457
+  ],
+  "settle_axis": [
+   0.8975,
+   -0.2667,
+   -0.3512
+  ],
+  "pen_low_z": 0.6118,
+  "grasped_end": true,
+  "angle_deg": 2.61,
+  "shallow": true,
+  "param_set": "def",
+  "success": true,
+  "out": "verify_out/transfer_pool2/xp0.006_yp0.010_s19_def"
+ }
+]
