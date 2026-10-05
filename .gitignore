@@ -35,3 +35,7 @@ verify_out/eval_transfer_act_m4_*_v3/v*.png
 verify_out/eval_transfer_act_m4_uni_*_v3/v*.png
 !verify_out/rl_m4_curve.png
 !verify_out/rl_m4_curve.csv
+!verify_out/rl_m4_k3_curve.png
+!verify_out/rl_m4_k3_curve.csv
+!verify_out/rl_m4_k3_final.json
+!verify_out/rl_m4_k3_ab_probe.json

@@ -106,8 +106,11 @@ MVP 只复现**骨架**：codec/SFT/DAgger/RL 四步 → 简化为 **ACT 模仿�
   K=3 ensemble 复评合并成功率 ≥55% 为闸门。
 - [ ] **n9c Sim-DAgger（条件触发：n9a/9b 后仍 <55% 才做）**：逐帧 save_state，ACT rollout
   失败时回滚到分岔前帧 → 脚本专家从该态接管（set_state 恢复 + 2 s 动作混合）→ 数据回流重训。
-- [~] **n10 重跑残差 RL（进行中 2026-10-05）**：K=3 ensemble 冻结为基线（checkpoints/rl_m4_k3），
-  残差头/TD3 不变，50k transitions；评测已确定性，eval 曲线可直接判读；出图推送。
+- [x] **n10 重跑残差 RL（2026-10-05 完成，部分成功）**：K=3 基线上 58.3%→65.3%（整体 p=0.47），
+  但局部真实修复变体6（0/5→5/6，p=0.015）；4 个恒败变体（臂接近几何）未解，90% 未达。
+  结论：手指残差到顶，下一步扩残差到双臂（n11，配置已备）或提基线（n9/DAgger）/codec。
+- [ ] **n11 全 54-D 残差（候选，配置 configs/residual_td3_transfer_k3_arms.yaml 已备）**：
+  K=3 基线不变，残差扩到双臂 7+双手指 20，对症 handoff 接近几何；50k，同 A/B 口径。
 
 ### M4（可选 Phase-B，按兴趣选做）
 

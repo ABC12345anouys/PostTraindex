@@ -492,7 +492,7 @@ def main():
                              variants, "final-pool")
         final = {"transitions": buf.n, "episodes": ep,
                  "pool": {"rate": rate, "results": res}}
-        (ROOT / "verify_out" / "rl_m4_final.json").write_text(
+        (ROOT / "verify_out" / f"{out.name}_final.json").write_text(
             json.dumps(final, ensure_ascii=False, indent=1))
         print(f"== FINAL pool {rate:.0%} ==", flush=True)
 
