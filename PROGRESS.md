@@ -11,17 +11,17 @@
 | M1 | 脚本示教 + LeRobot 数据集（100–200 条） | ✅ 完成（2026-09-29） | 160 条 LeRobot v3（train 130 / val 30）；白名单好点 9 点 + plan_seed 重试 + 脏成功过滤；宽包络 80% 未达（偏离已登记，用户确认） |
 | M2 | ACT 模仿学习（基线 ≥40%） | ✅ 完成（2026-09-30） | 20k 步 loss 0.048；闭环 ensemble0.01：白名单 7/9=78%、rand20 12/20=60%，过 ≥40% 闸门 |
 | M3 | 残差 TD3 | ✅ 完成（2026-09-30） | 手部 20-D 残差：任务分布 wl9 9/9=100%（基线 89%）达成 ≥90%；泛化 rand20 55% 持平基线（死区归因，上限 ~75–80%）；success-vs-transitions 曲线 14 点已产出 |
-| M4 | Phase-B：Transfer between Hands 完整流水线 | 🟡 n6 完成（2026-10-05） | n5 ACT 42% 过闸门；**n6 raw 残差 TD3 50k 无可信增益（47%→53%，Fisher p=0.81，问题 43）——负结果**；下一步：提基线/降评测方差或转 codec latent 残差 |
+| M4 | Phase-B：Transfer between Hands 完整流水线 | 🟡 n8 完成/n10 进行中（2026-10-05） | n8 K=3 ensemble 复评 58%、极差 0pp（过 ≥55% 闸门，问题 44）；n10 在确定性基线上重跑残差 TD3 50k |
 
 **当前阶段**：M0–M3 已完成；M4 Transfer 任务 n1–n5 已收官脚本专家→扫描→录数→ACT 四段流水线。
 场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
 3 路 224² 相机、20 Hz 控制（frame_skip=25，sim dt=0.002）、π/18 限幅、reset 笔随机 + 静置、
 成功判定（手接触+整体抬离桌面 3 cm+连续 0.5 s 稳定）全部就绪。
 
-**下次工作入口（n7 决策点）**：n6 raw 残差 TD3 在 42% 基线上无显著增益（问题 43）。三条候选——
-① 提基线：扩 transfer 示教 + 多 ckpt ensemble 降 ACT latent 评测方差（与候选③ Sim-DAgger 合流），
-基线到 ≥55% 再重跑残差 RL；② 转 codec latent 残差（候选②，论文 Fig.9 核心实验，latent 表达力
-可能突破 0.02 rad 关节残差的毫米级死区）；③ RL 调参（证据弱，不优先）。代码与结果已推送 GitHub。
+**下次工作入口**：n10 残差 TD3（K=3 ensemble 基线上）50k 训练中（checkpoints/rl_m4_k3，
+8.5 分钟分段自动续训，日志 verify_out/train_rl_m4_k3.log）。完成后终评 +
+scripts/plot_rl_m4.py --run rl_m4_k3 出确定性口径 success-vs-transitions 曲线。
+n9 扩示教/n9c Sim-DAgger 暂缓（n8 已过闸门，RL 若卡壳再启动）。
 
 ### M0 验收记录
 
@@ -341,3 +341,41 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
   今后 RL 判据 = 多轮复评合并 + Fisher 显著性 + 滑动均值，曲线单峰不作数。
 - 另修复一个流程细节：脚本到 50k 的自动终评用末段 actor（42%），best actor 终评须显式
   `--finalize`（曾被 done 标志短路）；两种终评均留档（rl_m4_final.json / rl_m4_final_current_actor.json）。
+
+## M4 n7 启动：评测噪声根因定位 → ensemble/扩数据路线（2026-10-05）
+
+### 问题 44：闭环评测随机性的真正来源 = EGL 渲染 1px 边缘噪声 × 接触混沌（非 ACT latent）
+- 排查链（同变体 (-12,0) ps4 双 rollout 逐帧比对）：
+  ① 推断 ACT 推理采 latent → 查 lerobot ACT 源码，`use_vae and training` 才走 VAE 分支，
+     推理 latent 恒为 0；同 obs 连推 5 次动作逐比特一致（maxdiff=0）。
+  ② MuJoCo reset(seed=1002)、expert plan_seed 全部确定性；双 rollout settle 末 qpos/qvel 逐比特一致。
+  ③ 逐帧比对定位到 frame1：qpos/qvel/state/object 全同，**right_wrist 相机图像出现 1/255 像素差**；
+     frame2 扩散到 head/left_wrist（28–71），qvel 差 4.8e-2→0.99 rad/s，episode 成败翻转。
+  ④ 同状态连渲两次偶发 0、偶发 1px 差 → EGL GPU 边缘着色竞争（共享 GPU 环境），与策略无关。
+- 含义：任何单轮 12 变体成功率都带 ±2~4/12 噪声；n6 的 67% 峰值与 42% 谷值同因。
+- 对策（PLAN n8–n10）：多 ckpt ensemble 平均掉像素扰动的动作响应 + 多轮复评口径；
+  扩示教提基线到 ≥55% 再 RL。
+
+## M4 n8：多 ckpt ensemble 一次过闸门——58% 且评测确定性（2026-10-05）
+
+### 方法
+- 新增 `policy/act_ensemble.py`：K 个 ACT ckpt 各带 temporal ensemble 队列，逐帧动作等权平均；
+  与 ACTBase 同接口，eval/RL 零侵入。`scripts/eval_ensemble_probe.py`：K 策略 × R 轮 ×12 变体复评。
+- K=3 选同一次训练的 030k/035k/040k（相邻 ckpt 对像素噪声响应不相关，权重天然可用）。
+
+### 结果（verify_out/n8_ensemble_probe.json）
+
+| 策略 | 3 轮复评 | 合并 36 trial | 单轮极差 |
+|---|---|---|---|
+| K=1 040k | 42 / 58 / 42% | 17/36 = 47% | 16.7pp |
+| **K=3 30/35/40k** | **58 / 58 / 58%** | 21/36 = **58%** | **0pp** |
+
+K=3 三轮 per-variant 成功掩码完全相同（成功的 7 个变体逐轮一致）——ensemble 同时做了两件事：
+① 均值 +11pp 越过 ≥55% 闸门；② 把含 1px 渲染噪声的随机评测变成**确定性指标**
+（n6 中 best-actor 回滚信号失真问题随之消失，n10 曲线可直接判读）。
+
+### 决策
+- n8b（多种子训练）与 n9（扩示教）的目的（过 55% + 降方差）已由 n8 单独达成，暂缓；
+  保留为 n10 卡壳时的后备（PLAN n9a/n9c 方案已备好，扫描器已加 --rings/--angles 参数）。
+- 直接进入 n10：configs/residual_td3_transfer_k3.yaml（act_ckpts 三键，
+  out_dir=checkpoints/rl_m4_k3），残差切片/TD3 超参与 n6 完全一致，已冒烟通过。

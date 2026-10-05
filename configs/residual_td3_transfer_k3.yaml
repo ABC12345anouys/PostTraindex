@@ -1,0 +1,40 @@
+# M4 n10 transfer 残差 TD3（K=3 ensemble 冻结基线上）
+# n8 实测：K=3（30/35/40k）3 轮复评 21/36=58%、极差 0pp（n8_ensemble_probe.json）
+# 评测从随机指标变为确定性指标，best-actor 回滚信号因此可信
+act_ckpts:
+  - checkpoints/act_m4/checkpoints/030000/pretrained_model
+  - checkpoints/act_m4/checkpoints/035000/pretrained_model
+  - checkpoints/act_m4/checkpoints/040000/pretrained_model
+ensemble: 0.01
+out_dir: checkpoints/rl_m4_k3
+pool: verify_out/transfer_success_pool.json
+seed: 42
+
+episode_seconds: 25
+max_frames: 200
+drop_clearance: 0.02
+shape_w: 2.0
+shape_clip: 0.005
+residual_bound: 0.02
+residual_dims: [[7, 27], [34, 54]]
+expl_noise: 0.5
+greedy_prob: 0.5
+actor_l2: 0.5
+
+gamma_frame: 0.99
+batch_size: 128
+buffer_size: 200000
+actor_lr: 0.00005
+critic_lr: 0.00005
+tau: 0.005
+policy_delay: 2
+target_noise: 0.2
+target_noise_clip: 0.5
+grad_steps_per_episode: 100
+critic_warmup_transitions: 500
+
+r_success: 0.0
+r_fail: -1.0
+
+max_transitions: 50000
+eval_every_episodes: 10

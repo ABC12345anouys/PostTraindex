@@ -1,0 +1,122 @@
+{
+ "k1_040k": {
+  "name": "k1_040k",
+  "k": 1,
+  "ckpts": [
+   "checkpoints/act_m4/checkpoints/040000/pretrained_model"
+  ],
+  "reps": [
+   0.4167,
+   0.5833,
+   0.4167
+  ],
+  "per_rep_success": [
+   [
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    1
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    1
+   ]
+  ],
+  "merged_trials": "17/36",
+  "merged_rate": 0.4722,
+  "spread_pct_points": 16.7
+ },
+ "k3_30_35_40": {
+  "name": "k3_30_35_40",
+  "k": 3,
+  "ckpts": [
+   "checkpoints/act_m4/checkpoints/030000/pretrained_model",
+   "checkpoints/act_m4/checkpoints/035000/pretrained_model",
+   "checkpoints/act_m4/checkpoints/040000/pretrained_model"
+  ],
+  "reps": [
+   0.5833,
+   0.5833,
+   0.5833
+  ],
+  "per_rep_success": [
+   [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1
+   ],
+   [
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1
+   ]
+  ],
+  "merged_trials": "21/36",
+  "merged_rate": 0.5833,
+  "spread_pct_points": 0.0
+ }
+}

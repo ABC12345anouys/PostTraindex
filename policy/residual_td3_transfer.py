@@ -388,7 +388,13 @@ def main():
         print("已达 max_transitions 并完成终评，无需再跑。")
         return
 
-    act = ACTBase(ROOT / rc["act_ckpt"], float(rc["ensemble"]), device)
+    if rc.get("act_ckpts"):
+        from policy.act_ensemble import ACTEnsemble
+        act = ACTEnsemble([ROOT / c for c in rc["act_ckpts"]],
+                          float(rc["ensemble"]), device)
+        print(f"冻结基线：K={len(rc['act_ckpts'])} ckpt ensemble", flush=True)
+    else:
+        act = ACTBase(ROOT / rc["act_ckpt"], float(rc["ensemble"]), device)
     env, unwrapped = make_env(rc["episode_seconds"])
     pfx = Prefix(env, unwrapped, ROOT / "configs/transfer_marker.yaml")
     # 变体 = 成功池去重 (point, plan_seed)

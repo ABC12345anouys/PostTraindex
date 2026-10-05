@@ -239,6 +239,10 @@ def main():
     ap.add_argument("--out", default="verify_out/scan_pick")
     ap.add_argument("--plan-seeds", type=int, nargs="+", default=None)
     ap.add_argument("--dense", action="store_true", help="±6mm/2mm 稠密网格替代环点")
+    ap.add_argument("--rings", type=float, nargs="+", default=None,
+                    help="环半径（mm），如 16 20；默认 2/5/8/12")
+    ap.add_argument("--angles", type=int, default=6,
+                    help="每环方向数（默认 6，即 60° 均分）")
     args = ap.parse_args()
     if args.plan_seeds is not None:
         global PLAN_SEEDS
@@ -246,6 +250,14 @@ def main():
     if args.dense:
         global POINTS
         POINTS = dense_points()
+    elif args.rings is not None:
+        POINTS = [(0.0, 0.0)]
+        for _r in args.rings:
+            _r = _r / 1000.0
+            for _k in range(args.angles):
+                _th = 2 * np.pi * _k / args.angles
+                POINTS.append((round(_r * np.cos(_th), 6),
+                               round(_r * np.sin(_th), 6)))
     out_dir = ROOT / args.out
     out_dir.mkdir(parents=True, exist_ok=True)
     if args.merge:

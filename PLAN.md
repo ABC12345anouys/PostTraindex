@@ -89,6 +89,26 @@ MVP 只复现**骨架**：codec/SFT/DAgger/RL 四步 → 简化为 **ACT 模仿�
 - [x] 预算：实际 ~30k per-frame 转移（4 个 8.5 分钟前台段落，ckpt+buffer 断点续训）
 - [x] 验收：任务分布 wl9 9/9=**100%**（基线 89%）✅ ≥90%；泛化 rand20 55% 持平基线（死区点归因，上限 ~75–80%）；success-vs-transitions 曲线 `verify_out/rl_m3_curve.png`（14 eval 点）
 
+### M4 n7–n10：提基线（ensemble + 扩示教，合流 Sim-DAgger）→ 重跑残差 RL（2026-10-05 定案）
+
+**触发**：n6 raw 残差 TD3 在 42% 基线上无显著增益（36-trial Fisher p=0.81）。
+噪声根因已查明（问题 44）：EGL 渲染在同状态下偶发 ~1px 边缘像素差 → ACT 动作 1e-6 级偏差
+→ 毫米级接触混沌放大成成功/失败翻转（同 actor 单轮 12 变体可 25%↔58%）。
+路线：先压评测方差 + 提基线到 ≥55%（论文 RL 稳定有效区），再重跑残差 RL。
+
+- [x] **n8 多 ckpt ensemble 压方差（2026-10-05 完成，超预期）**：K=3（030/035/040k）逐帧动作平均，
+  3 轮复评 58/58/58%（极差 **0pp**，成功变体逐轮完全一致）vs K=1 的 42/58/42%（16.7pp），
+  合并 21/36=**58%** vs 17/36=47%。评测变为确定性指标，且直接越过 ≥55% 闸门，n8b/n9 暂缓。
+  产物：policy/act_ensemble.py、scripts/eval_ensemble_probe.py、verify_out/n8_ensemble_probe.json。
+- [ ] **n9a 扩自然变体示教**：扫描加密/外环（目标 30+ 桌面点 × ps0-19）→ 浅轴池+参数池
+  验证新互异组合 → 新录 30–50 条（总 80–100）。
+- [ ] **n9b ensemble 重训**：扩大数据集上重训 ACT（40k，若 n8b 需要则多种子并行），
+  K=3 ensemble 复评合并成功率 ≥55% 为闸门。
+- [ ] **n9c Sim-DAgger（条件触发：n9a/9b 后仍 <55% 才做）**：逐帧 save_state，ACT rollout
+  失败时回滚到分岔前帧 → 脚本专家从该态接管（set_state 恢复 + 2 s 动作混合）→ 数据回流重训。
+- [~] **n10 重跑残差 RL（进行中 2026-10-05）**：K=3 ensemble 冻结为基线（checkpoints/rl_m4_k3），
+  残差头/TD3 不变，50k transitions；评测已确定性，eval 曲线可直接判读；出图推送。
+
 ### M4（可选 Phase-B，按兴趣选做）
 
 - [ ] 实现论文 Step 1 的 chunk-VAE codec（每手 20→9，0.43M 参数小模型，训练简单）→ latent residual RL 对比 raw residual（复现论文核心实验 Fig.9 latent vs raw）
