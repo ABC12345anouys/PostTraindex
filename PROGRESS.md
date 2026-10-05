@@ -11,17 +11,17 @@
 | M1 | 脚本示教 + LeRobot 数据集（100–200 条） | ✅ 完成（2026-09-29） | 160 条 LeRobot v3（train 130 / val 30）；白名单好点 9 点 + plan_seed 重试 + 脏成功过滤；宽包络 80% 未达（偏离已登记，用户确认） |
 | M2 | ACT 模仿学习（基线 ≥40%） | ✅ 完成（2026-09-30） | 20k 步 loss 0.048；闭环 ensemble0.01：白名单 7/9=78%、rand20 12/20=60%，过 ≥40% 闸门 |
 | M3 | 残差 TD3 | ✅ 完成（2026-09-30） | 手部 20-D 残差：任务分布 wl9 9/9=100%（基线 89%）达成 ≥90%；泛化 rand20 55% 持平基线（死区归因，上限 ~75–80%）；success-vs-transitions 曲线 14 点已产出 |
-| M4 | Phase-B：Transfer between Hands 完整流水线 | 🟡 n5 完成（2026-10-04） | 46 条示教 ACT 40k 闭环 **5/12=42% 过 ≥40% 闸门**（问题 42 对照实验）；下一步 n6 残差 RL；脚本原型→扫浅轴池→录数→ACT 流水线在第二任务上复现成功 |
+| M4 | Phase-B：Transfer between Hands 完整流水线 | 🟡 n6 完成（2026-10-05） | n5 ACT 42% 过闸门；**n6 raw 残差 TD3 50k 无可信增益（47%→53%，Fisher p=0.81，问题 43）——负结果**；下一步：提基线/降评测方差或转 codec latent 残差 |
 
 **当前阶段**：M0–M3 已完成；M4 Transfer 任务 n1–n5 已收官脚本专家→扫描→录数→ACT 四段流水线。
 场景 54 执行器（左臂7+左手20+右臂7+右手20）、Gymnasium 环境 `BimanualDex-v0`、
 3 路 224² 相机、20 Hz 控制（frame_skip=25，sim dt=0.002）、π/18 限幅、reset 笔随机 + 静置、
 成功判定（手接触+整体抬离桌面 3 cm+连续 0.5 s 稳定）全部就绪。
 
-**下次工作入口（n6）**：以多模态 40k ckpt（`checkpoints/act_m4/.../040000`，闭环 5/12=42%）为冻结基线，
-回填 `configs/residual_td3_transfer.yaml` 的 act_ckpt，跑 `policy/residual_td3_transfer.py`
-（A_DIM=40 双切片 [7,27]+[34,54]，已冒烟通过）凑 50k transitions，出 success-vs-transitions 曲线。
-注意 eval/RL 环境必须保留 hold_frames=10**9 修复（问题 41）。
+**下次工作入口（n7 决策点）**：n6 raw 残差 TD3 在 42% 基线上无显著增益（问题 43）。三条候选——
+① 提基线：扩 transfer 示教 + 多 ckpt ensemble 降 ACT latent 评测方差（与候选③ Sim-DAgger 合流），
+基线到 ≥55% 再重跑残差 RL；② 转 codec latent 残差（候选②，论文 Fig.9 核心实验，latent 表达力
+可能突破 0.02 rad 关节残差的毫米级死区）；③ RL 调参（证据弱，不优先）。代码与结果已推送 GitHub。
 
 ### M0 验收记录
 
@@ -308,3 +308,36 @@ gym 注册/空间、reset 合法随机化（10 次）、动作限幅实测 0.174
 - 数据/图：data/bimanual_transfer{,_uni}_{train,val}（不入库）、verify_out/act_m4{,_uni}_curves.png、
   verify_out/eval_transfer_act_m4{,_uni}_*_v3/（results.json + success_rate.png）、
   verify_out/transfer_pool_unimodal.json。
+
+## M4 n6：raw 残差 TD3 50k —— 无显著增益的负结果（2026-10-05）
+
+### 实验设置（与 M3 同构）
+- 冻结多模态 ACT 40k（040000，ensemble 0.01）+ 40-D 双手指残差（[7,27]+[34,54]，bound 0.02 rad），
+  TD3 超参全部对齐 M3（expl0.5/greedy0.5、100 grad/episode、warmup 500）。
+- **50019 transitions / 496 episodes / 49600 updates / 49 个 pool 评测点**，16 次 best-actor 回滚、
+  actor_lr 衰减到地板 1e-7。产物 checkpoints/rl_m4/（不入库）、verify_out/rl_m4_{curve,final,eval_noise,eval_stats}.*。
+
+### 问题 43：单轮 12 变体评测是高噪声指标——训练曲线的 67% 峰值是噪声不是学习
+- 训练曲线在 25%–67% 间无趋势振荡（前 10 点均值 48.3%，后 10 点 45.8%）；训练 rollout 成功率
+  43%→51%（含 50% 探索噪声条），贪心评测不支持提升结论。
+- 噪声校准（每策略 3 轮 ×12 变体 = 36 trial，verify_out/rl_m4_eval_noise.json）：
+
+| 策略 | 单轮极差 | 36 trial 合并 |
+|---|---|---|
+| 纯 ACT（残差=0，RL harness 口径） | 42%–50% | 17/36 = 47% |
+| best actor（训中峰值存档） | 50%–58% | 19/36 = **53%** |
+| 末段 actor（50k） | 25%–58% | 16/36 = 44% |
+
+  best vs 基线双侧 Fisher p=**0.81**，差异不显著；同一 actor 单轮可在 25%↔58% 间跳动
+  （ACT 推理逐轮采样 style latent，长程 chunk 放大分岔）。
+
+### 结论与归因
+- **n6 判决：raw 关节空间残差 TD3 在 transfer 42% 基线上、50k 预算内无可信增益**，未达 90% 目标。
+  best actor 名义 +6pp 在噪声范围内；这是本项目第一个 RL 负结果。
+- 与 M3（89%→100%）对比的解释：M3 是近天花板任务的小幅修补；transfer 基线 42% 正落在论文
+  「<20% RL 无效、≥50% 才稳定」的灰区。失败形态是毫米级沿轴接笔几何，40-D 手指 0.02 rad 残差
+  更可能不足以表达修正（M3 中手指残差只需微调抓握）。
+- 方法论收获（已固化进绘图口径 scripts/plot_rl_m4.py）：**12 变体单轮评测不能用于策略比较**，
+  今后 RL 判据 = 多轮复评合并 + Fisher 显著性 + 滑动均值，曲线单峰不作数。
+- 另修复一个流程细节：脚本到 50k 的自动终评用末段 actor（42%），best actor 终评须显式
+  `--finalize`（曾被 done 标志短路）；两种终评均留档（rl_m4_final.json / rl_m4_final_current_actor.json）。

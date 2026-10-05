@@ -1,0 +1,25 @@
+{
+ "replicates": 3,
+ "variants": 12,
+ "zero_mean": 0.4723333333333333,
+ "zero_trials": "17/36",
+ "best_mean": 0.5276666666666666,
+ "best_trials": "19/36",
+ "final_mean": 0.4443333333333333,
+ "final_trials": "16/36",
+ "single_eval_range": {
+  "best": [
+   0.5,
+   0.583
+  ],
+  "final": [
+   0.25,
+   0.583
+  ],
+  "zero": [
+   0.417,
+   0.5
+  ]
+ },
+ "fisher_p_best_vs_zero": 0.814
+}

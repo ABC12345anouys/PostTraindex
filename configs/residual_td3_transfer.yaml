@@ -1,7 +1,7 @@
 # M4 n6 transfer 残差 TD3：冻结 ACT（ensemble 0.01）+ raw 关节空间残差
 # 跑在 lerobot-env（mujoco 3.7.0，与录数/n5 评测同物理）
 # episode = reset(yaw0)+expert pick(plan_seed)+settle25 前缀 → 策略接管 ≤max_frames
-act_ckpt: checkpoints/act_m4/checkpoints/040000/pretrained_model   # TODO: n5 评测后回填最优
+act_ckpt: checkpoints/act_m4/checkpoints/040000/pretrained_model   # n5 选定：多模态 40k，闭环 5/12=42% 过闸门且曲线在上行通道
 ensemble: 0.01
 out_dir: checkpoints/rl_m4
 pool: verify_out/transfer_success_pool.json
