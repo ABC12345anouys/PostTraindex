@@ -1,0 +1,117 @@
+{
+ "transitions": 50011,
+ "episodes": 465,
+ "pool": {
+  "rate": 0.5833333333333334,
+  "results": [
+   {
+    "point": [
+     0.0,
+     0.0
+    ],
+    "plan_seed": 4,
+    "success": false,
+    "frames": 111
+   },
+   {
+    "point": [
+     -0.012,
+     0.0
+    ],
+    "plan_seed": 4,
+    "success": false,
+    "frames": 84
+   },
+   {
+    "point": [
+     -0.004,
+     0.006928
+    ],
+    "plan_seed": 2,
+    "success": false,
+    "frames": 68
+   },
+   {
+    "point": [
+     0.006,
+     0.010392
+    ],
+    "plan_seed": 19,
+    "success": true,
+    "frames": 130
+   },
+   {
+    "point": [
+     0.001,
+     0.001732
+    ],
+    "plan_seed": 19,
+    "success": true,
+    "frames": 122
+   },
+   {
+    "point": [
+     -0.001,
+     0.001732
+    ],
+    "plan_seed": 19,
+    "success": true,
+    "frames": 120
+   },
+   {
+    "point": [
+     0.004,
+     0.006928
+    ],
+    "plan_seed": 11,
+    "success": true,
+    "frames": 129
+   },
+   {
+    "point": [
+     -0.002,
+     0.0
+    ],
+    "plan_seed": 19,
+    "success": true,
+    "frames": 123
+   },
+   {
+    "point": [
+     -0.012,
+     0.0
+    ],
+    "plan_seed": 19,
+    "success": false,
+    "frames": 116
+   },
+   {
+    "point": [
+     -0.004,
+     -0.004
+    ],
+    "plan_seed": 19,
+    "success": false,
+    "frames": 126
+   },
+   {
+    "point": [
+     0.002,
+     -0.002
+    ],
+    "plan_seed": 19,
+    "success": true,
+    "frames": 165
+   },
+   {
+    "point": [
+     -0.002,
+     -0.006
+    ],
+    "plan_seed": 19,
+    "success": true,
+    "frames": 128
+   }
+  ]
+ }
+}
